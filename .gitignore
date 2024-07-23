@@ -1,0 +1,11 @@
+**/.DS_Store
+data/
+
+**/.tmp/
+
+**/venv/
+**/__pycache__/
+
+**/node_modules/
+
+**/.env

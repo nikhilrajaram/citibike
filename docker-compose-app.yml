@@ -1,0 +1,61 @@
+services:
+  clickhouse:
+    build: ./clickhouse
+    healthcheck:
+      test: "wget -q -O - 'http://localhost:8123/?query=SELECT%20COUNT(*)%20%3E%201%20FROM%20trips;' || exit 1"
+      interval: 1m30s
+      timeout: 15s
+      retries: 3
+      start_period: 15m
+      start_interval: 30s
+    volumes:
+      # mount data dir for persistence, logs for debugging, and init scripts
+      - ./data/:/var/lib/clickhouse/user_files/
+      - ./clickhouse/container/data/:/var/lib/clickhouse/
+      - ./clickhouse/container/logs/:/var/log/clickhouse-server/
+      - ./clickhouse/docker-entrypoint-initdb.d/:/docker-entrypoint-initdb.d/
+    ports:
+      - "8123:8123"
+    networks:
+      - citibike_network
+
+  mapserver:
+    build: ./mapserver
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+        restart: false
+    healthcheck:
+      test: "wget -q -O - 'http://localhost:3001/ping' || exit 1"
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+    volumes:
+      - ./mapserver:/usr/app
+    ports:
+      - "3001:3001"
+    networks:
+      - citibike_network
+    environment:
+      - CLICKHOUSE_HOST=clickhouse
+      - CLICKHOUSE_PORT=8123
+    command: node ./node_modules/nodemon/bin/nodemon src/index.ts
+
+  map:
+    build: ./map
+    depends_on:
+      mapserver:
+        condition: service_healthy
+        restart: false
+    volumes:
+      - ./map:/usr/app
+    ports:
+      - "3000:3000"
+    networks:
+      - citibike_network
+    command: npm run dev
+
+networks:
+  citibike_network:
+    driver: bridge
