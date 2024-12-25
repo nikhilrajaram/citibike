@@ -27,8 +27,9 @@ app.get(
     const endDate = requireParam(req.query, "endDate");
     const startTime = requireParam(req.query, "startTime");
     const endTime = requireParam(req.query, "endTime");
+    const daysOfWeek = req.query.daysOfWeek?.toString();
 
-    queryFlux({ startDate, endDate, startTime, endTime }, res);
+    queryFlux({ startDate, endDate, startTime, endTime, daysOfWeek }, res);
   }
 );
 

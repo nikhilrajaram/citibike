@@ -9,10 +9,11 @@ type FluxQuery = {
   endDate: string;
   startTime?: string;
   endTime?: string;
+  daysOfWeek?: string;
 };
 
 const getDateCondition = (
-  { startDate, endDate, startTime, endTime }: FluxQuery,
+  { startDate, endDate, startTime, endTime, daysOfWeek }: FluxQuery,
   field: "started_at" | "ended_at"
 ) => {
   let condition = `
@@ -29,9 +30,14 @@ const getDateCondition = (
       `;
     } else {
       condition += ` 
-        AND toYYYYMMDDhhmmss(started_at) % 1000000 BETWEEN ${startTime} AND ${endTime}
+        AND toYYYYMMDDhhmmss(${field}) % 1000000 BETWEEN ${startTime} AND ${endTime}
       `;
     }
+  }
+  if (daysOfWeek) {
+    condition += `
+      AND toDayOfWeek(${field}, 1) IN (${daysOfWeek})
+    `;
   }
 
   return condition;
@@ -45,26 +51,22 @@ export const queryFlux = async (query: FluxQuery, res: express.Response) => {
   const startedAtCondition = getDateCondition(query, "started_at");
   const endedAtCondition = getDateCondition(query, "ended_at");
   const fluxSql = `
-    WITH outbound_trips AS (
+    SELECT it.station_id AS stationId,
+           it.c AS inbound,
+           ot.c AS outbound
+    FROM (
       SELECT start_station_id AS station_id, COUNT(*) AS c
       FROM trips
       WHERE ${startedAtCondition}
       GROUP BY start_station_id
-    ),
-    inbound_trips AS (
+    ) ot
+    JOIN (
       SELECT end_station_id AS station_id, COUNT(*) AS c
       FROM trips
       WHERE ${endedAtCondition}
       GROUP BY end_station_id
-    )
-    SELECT cs.short_name AS stationId,
-           it.c AS inbound,
-           ot.c AS outbound
-    FROM outbound_trips ot
-    JOIN inbound_trips it
-      ON ot.station_id = it.station_id
-    JOIN current_stations cs
-      ON cs.short_name = it.station_id;
+    ) it
+      ON ot.station_id = it.station_id;
   `;
 
   const rows = await client.query({

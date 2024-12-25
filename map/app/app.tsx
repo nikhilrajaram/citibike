@@ -1,12 +1,11 @@
 "use client";
-import { DatePicker, Space, TimePicker, Typography } from "antd";
 import * as d3 from "d3";
 import dayjs, { Dayjs } from "dayjs";
 import { useState } from "react";
 import Map, { Marker, Popup } from "react-map-gl";
 import { FluxPoint, useFlux } from "./hooks/use-flux";
-
-const { Title } = Typography;
+import { Sidebar } from "./sidebar";
+import { DAYS_OF_WEEK } from "./util/days-of-week";
 
 export const App = () => {
   const today = dayjs();
@@ -16,6 +15,10 @@ export const App = () => {
   );
   const [endDate, setEndDate] = useState<Dayjs>(today);
   const [endTime, setEndTime] = useState<Dayjs>(dayjs("10:00:00", "HH:mm:ss"));
+
+  const [daysOfWeek, setDaysOfWeek] = useState<string[]>(
+    DAYS_OF_WEEK.slice(1, 6)
+  );
 
   const [flux, setFlux] = useState<FluxPoint[]>([]);
   const [fluxScale, setFluxScale] =
@@ -45,53 +48,30 @@ export const App = () => {
   };
 
   useFlux(
-    { startDate, endDate, startTime, endTime },
+    { startDate, endDate, startTime, endTime, daysOfWeek },
     { onData: onFluxStreamEnd }
   );
 
-  const handleDateRangeChange = (dates: unknown) => {
-    if (!dates || !Array.isArray(dates)) {
-      return;
-    }
+  const [hoverOverPoint, setHoverOverPoint] = useState<(typeof flux)[number]>();
 
-    setStartDate(dates[0]);
-    setEndDate(dates[1]);
-  };
-
-  const handleTimeRangeChange = (dates: unknown) => {
-    if (!dates || !Array.isArray(dates)) {
-      return;
-    }
-
-    setStartTime(dates[0]);
-    setEndTime(dates[1]);
-  };
+  const updateHover = (point: (typeof flux)[number]) => () =>
+    setHoverOverPoint(point);
+  const clearHover = () => setHoverOverPoint(undefined);
 
   return (
     <div>
-      <div className="absolute top-0 left-0 bg-opacity-80 bg-white p-4 z-50 margin-20 shadow-md">
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col">
-            <Title level={5}>Time of day</Title>
-            <TimePicker.RangePicker
-              format={"hh:mm a"}
-              use12Hours
-              value={[startTime, endTime]}
-              onChange={handleTimeRangeChange}
-              order={false}
-            />
-          </div>
-          <div className="flex flex-col">
-            <Title level={5}>Date range</Title>
-            <Space direction="vertical" size={12}>
-              <DatePicker.RangePicker
-                value={[startDate, endDate]}
-                onChange={handleDateRangeChange}
-              />
-            </Space>
-          </div>
-        </div>
-      </div>
+      <Sidebar
+        startDate={startDate}
+        setStartDate={setStartDate}
+        endDate={endDate}
+        setEndDate={setEndDate}
+        startTime={startTime}
+        setStartTime={setStartTime}
+        endTime={endTime}
+        setEndTime={setEndTime}
+        daysOfWeek={daysOfWeek}
+        setDaysOfWeek={setDaysOfWeek}
+      ></Sidebar>
       <div className="w-full h-full z-0">
         <Map
           mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN}

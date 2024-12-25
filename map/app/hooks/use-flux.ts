@@ -1,5 +1,6 @@
 import { Dayjs } from "dayjs";
 import { useEffect } from "react";
+import { DAYS_OF_WEEK } from "../util/days-of-week";
 
 export type FluxPoint = {
   stationId: string;
@@ -17,11 +18,13 @@ export const useFlux = (
     endDate,
     startTime,
     endTime,
+    daysOfWeek,
   }: {
     startDate: Dayjs;
     endDate: Dayjs;
     startTime: Dayjs;
     endTime: Dayjs;
+    daysOfWeek: string[];
   },
   {
     onData,
@@ -35,6 +38,7 @@ export const useFlux = (
       endDate: endDate.format("YYYYMMDD"),
       startTime: startTime.format("HHmmss"),
       endTime: endTime.format("HHmmss"),
+      daysOfWeek: daysOfWeek.map((d) => DAYS_OF_WEEK.indexOf(d)).join(","),
     };
   };
 
