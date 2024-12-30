@@ -1,7 +1,7 @@
 import { DatePicker, Space, Tag, TimePicker } from "antd";
 import Title from "antd/es/typography/Title";
 import { Dayjs } from "dayjs";
-import { DAYS_OF_WEEK } from "./util/days-of-week";
+import { DAYS_OF_WEEK } from "../util/days-of-week";
 
 export const Sidebar = ({
   startDate,

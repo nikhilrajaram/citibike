@@ -2,9 +2,9 @@
 import * as d3 from "d3";
 import dayjs, { Dayjs } from "dayjs";
 import { useState } from "react";
-import Map, { Marker, Popup } from "react-map-gl";
+import Map, { Marker } from "react-map-gl";
 import { FluxPoint, useFlux } from "./hooks/use-flux";
-import { Sidebar } from "./sidebar";
+import { Sidebar } from "./sidebar/sidebar";
 import { DAYS_OF_WEEK } from "./util/days-of-week";
 
 export const App = () => {
@@ -17,14 +17,13 @@ export const App = () => {
   const [endTime, setEndTime] = useState<Dayjs>(dayjs("10:00:00", "HH:mm:ss"));
 
   const [daysOfWeek, setDaysOfWeek] = useState<string[]>(
-    DAYS_OF_WEEK.slice(1, 6)
+    DAYS_OF_WEEK.slice(0, 5)
   );
 
   const [flux, setFlux] = useState<FluxPoint[]>([]);
   const [fluxScale, setFluxScale] =
     useState<d3.ScaleDiverging<string, never>>();
-  const [rideScale, setRideScale] =
-    useState<d3.ScaleLinear<number, number>>();
+  const [rideScale, setRideScale] = useState<d3.ScaleLinear<number, number>>();
 
   const onFluxStreamEnd = (data: FluxPoint[]) => {
     setFlux(data);
@@ -51,12 +50,6 @@ export const App = () => {
     { startDate, endDate, startTime, endTime, daysOfWeek },
     { onData: onFluxStreamEnd }
   );
-
-  const [hoverOverPoint, setHoverOverPoint] = useState<(typeof flux)[number]>();
-
-  const updateHover = (point: (typeof flux)[number]) => () =>
-    setHoverOverPoint(point);
-  const clearHover = () => setHoverOverPoint(undefined);
 
   return (
     <div>
@@ -103,7 +96,6 @@ export const App = () => {
                         backgroundColor: fluxScaleValue,
                         width: `${10 * (rideScaleValue + 0.5)}px`,
                         height: `${10 * (rideScaleValue + 0.5)}px`,
-                        opacity: Math.min(1, Math.pow(rideScaleValue, 0.3) + 0.2),
                         borderRadius: "50%",
                       }}
                     />

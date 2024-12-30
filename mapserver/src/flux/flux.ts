@@ -69,29 +69,36 @@ export const queryFlux = async (query: FluxQuery, res: express.Response) => {
       ON ot.station_id = it.station_id;
   `;
 
-  const rows = await client.query({
-    query: fluxSql,
-    format: "JSONEachRow",
-  });
-  const stream = rows.stream();
+  try {
+    const rows = await client.query({
+      query: fluxSql,
+      format: "JSONEachRow",
+      abort_signal: res.locals.abortController.signal,
+    });
+    const stream = rows.stream();
 
-  stream.on(
-    "data",
-    (rows: Row<{ stationId: string; inbound: number; outbound: number }>[]) => {
-      rows.forEach((row) => {
-        const stationFlux = row.json();
-        const station = stationsById[stationFlux.stationId];
-        const content =
-          JSON.stringify({
-            ...station,
-            ...stationFlux,
-          }) + "\n";
-        res.write(content);
-      });
-    }
-  );
+    stream.on(
+      "data",
+      (
+        rows: Row<{ stationId: string; inbound: number; outbound: number }>[]
+      ) => {
+        rows.forEach((row) => {
+          const stationFlux = row.json();
+          const station = stationsById[stationFlux.stationId];
+          const content =
+            JSON.stringify({
+              ...station,
+              ...stationFlux,
+            }) + "\n";
+          res.write(content);
+        });
+      }
+    );
 
-  stream.on("end", () => {
-    res.send();
-  });
+    stream.on("end", () => {
+      res.end();
+    });
+  } catch {
+    res.end();
+  }
 };

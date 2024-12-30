@@ -42,15 +42,19 @@ export const useFlux = (
     };
   };
 
-  const fetchData = async () => {
+  const fetchData = async ({
+    abortController,
+  }: {
+    abortController?: AbortController;
+  } = {}) => {
     const queryParams = new URLSearchParams(formatParams());
     try {
       const response = await fetch(
         `${
           process.env.NEXT_PUBLIC_MAPSERVER_URL
-        }/flux?${queryParams.toString()}`
+        }/flux?${queryParams.toString()}`,
+        { signal: abortController?.signal }
       );
-
       const reader = response.body?.getReader();
       if (!reader) {
         return;
@@ -98,12 +102,19 @@ export const useFlux = (
       }
       onData(data);
     } catch (e) {
-      console.error(e);
+      if ((e as Error)?.name !== "AbortError") {
+        console.error(e);
+      }
       onData([]);
     }
   };
 
   useEffect(() => {
-    fetchData();
+    const controller = new AbortController();
+    fetchData({ abortController: controller });
+
+    return () => {
+      controller.abort();
+    };
   }, [JSON.stringify(formatParams())]);
 };

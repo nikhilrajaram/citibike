@@ -1,6 +1,7 @@
 import cors from "cors";
 import express from "express";
 import { queryFlux } from "./flux/flux";
+import { cancellable } from "./middleware/cancellable";
 import { getStationsById } from "./stations/stations";
 
 const app = express();
@@ -15,6 +16,8 @@ const requireParam = (query: Record<string, unknown>, param: string) => {
 
   return value.toString();
 };
+
+app.use(cancellable);
 
 app.get(
   "/flux",
