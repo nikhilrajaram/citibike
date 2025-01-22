@@ -97,7 +97,9 @@ const runBenchmark = async () => {
             baseline: ClickHouseSummary;
             benchmark: ClickHouseSummary;
           };
-          for (let query of [baselineQuery, benchmarkQuery].sort(Math.random)) {
+          for (let query of [baselineQuery, benchmarkQuery].sort(
+            () => Math.random() - 0.5
+          )) {
             if (query === baselineQuery) {
               const baselineSummary = (
                 await client.command({
