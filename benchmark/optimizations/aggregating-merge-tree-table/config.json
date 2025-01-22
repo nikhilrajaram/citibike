@@ -1,0 +1,21 @@
+{
+  "queries": [
+    {
+      "baseline": {
+        "query": "station-flux.sql",
+        "replacements": {
+          "tableName": "trips_baseline"
+        }
+      },
+      "benchmark": {
+        "query": "station-flux-aggregating-merge-tree.sql",
+        "replacements": {
+          "outbound_trips_table": "outbound_trips",
+          "inbound_trips_table": "inbound_trips"
+        }
+      },
+      "replacementScript": "station-flux-replacements.ts",
+      "populateBefore": false
+    }
+  ]
+}

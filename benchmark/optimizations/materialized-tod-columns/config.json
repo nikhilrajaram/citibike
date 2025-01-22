@@ -1,0 +1,20 @@
+{
+  "queries": [
+    {
+      "baseline": {
+        "query": "station-flux.sql",
+        "replacements": {
+          "tableName": "trips_baseline"
+        }
+      },
+      "benchmark": {
+        "query": "station-flux-materialized-tod-dow.sql",
+        "replacements": {
+          "tableName": "trips_benchmark"
+        }
+      },
+      "replacementScript": "station-flux-replacements.ts",
+      "populateBefore": true
+    }
+  ]
+}
