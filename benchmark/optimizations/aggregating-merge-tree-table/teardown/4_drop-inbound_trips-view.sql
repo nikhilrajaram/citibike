@@ -1,0 +1,1 @@
+DROP VIEW IF EXISTS inbound_trips_mv;

@@ -23,11 +23,11 @@ services:
       pipeline:
         condition: service_completed_successfully
     healthcheck:
-      test: "wget -q -O - 'http://localhost:8123/?query=SELECT%20COUNT(*)%20%3E%201%20FROM%20trips;' || exit 1"
+      test: "wget -q -O - 'http://localhost:8123/?query=SELECT%20COUNT(*)%20%3E%201%20FROM%20trips'"
       interval: 1m30s
       timeout: 15s
       retries: 3
-      start_period: 15m
+      start_period: 1h
       start_interval: 30s
     volumes:
       # mount data dir for persistence, logs for debugging, and init scripts

@@ -1,0 +1,3 @@
+ALTER TABLE trips_benchmark
+DROP PROJECTION trips_benchmark_started_at_station,
+DROP PROJECTION trips_benchmark_ended_at_station;
