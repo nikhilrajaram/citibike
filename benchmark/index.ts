@@ -3,7 +3,7 @@ import fs from "fs";
 import path from "path";
 
 import { OptimizationConfig, QueryConfig } from "./types/optimization-config";
-import { getClient } from "./util/get-client";
+import { getClient, querySettings } from "./util/get-client";
 import { replaceQueryPlaceholders } from "./util/placeholders";
 import { runScriptsInFolder } from "./util/run-scripts-in-folder";
 import { beforeAllOptimizations } from "./util/setup";
@@ -104,12 +104,7 @@ const runBenchmark = async () => {
               const baselineSummary = (
                 await client.command({
                   query: baselineQuery,
-                  clickhouse_settings: {
-                    use_query_cache: 0,
-                    enable_reads_from_query_cache: 0,
-                    enable_writes_to_query_cache: 0,
-                    max_threads: 1,
-                  },
+                  clickhouse_settings: querySettings,
                 })
               ).summary;
               if (!baselineSummary) {
@@ -121,12 +116,7 @@ const runBenchmark = async () => {
               const benchmarkSummary = (
                 await client.command({
                   query: benchmarkQuery,
-                  clickhouse_settings: {
-                    use_query_cache: 0,
-                    enable_reads_from_query_cache: 0,
-                    enable_writes_to_query_cache: 0,
-                    max_threads: 1,
-                  },
+                  clickhouse_settings: querySettings,
                 })
               ).summary;
               if (!benchmarkSummary) {

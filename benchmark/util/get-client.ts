@@ -17,3 +17,11 @@ export const getClient = () => {
   }
   return client;
 };
+
+export const querySettings = {
+  use_query_cache: 0,
+  enable_reads_from_query_cache: 0,
+  enable_writes_to_query_cache: 0,
+  max_threads: 1,
+  max_memory_usage: "8G",
+} as const;
