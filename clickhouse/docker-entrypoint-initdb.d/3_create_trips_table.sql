@@ -4,8 +4,8 @@ CREATE TABLE
   trips (
     ride_id String,
     rideable_type String,
-    started_at DateTime64,
-    ended_at DateTime64,
+    started_at DateTime,
+    ended_at DateTime,
     start_current_station_id String,
     start_station_id String,
     start_station_name String,
