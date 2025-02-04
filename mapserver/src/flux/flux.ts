@@ -16,8 +16,12 @@ const getDateCondition = (
   { startDate, endDate, startTime, endTime, daysOfWeek }: FluxQuery,
   field: "started_at" | "ended_at"
 ) => {
+  const startDay = dayjs(startDate, "HHmmss");
+  const endDay = dayjs(endDate, "HHmmss");
   let condition = `
-    toYYYYMMDD(${field}) BETWEEN '${startDate}' AND '${endDate}'
+    ${field} BETWEEN '${startDay.format("YYYY-MM-DD")}' AND '${endDay.format(
+    "YYYY-MM-DD"
+  )}'
   `;
 
   if (startTime && endTime) {
@@ -55,14 +59,16 @@ export const queryFlux = async (query: FluxQuery, res: express.Response) => {
            it.c AS inbound,
            ot.c AS outbound
     FROM (
-      SELECT start_station_id AS station_id, COUNT(*) AS c
-      FROM trips
+      SELECT start_station_id AS station_id,
+             SUM(c) AS c
+      FROM outbound_trips
       WHERE ${startedAtCondition}
       GROUP BY start_station_id
     ) ot
     JOIN (
-      SELECT end_station_id AS station_id, COUNT(*) AS c
-      FROM trips
+      SELECT end_station_id AS station_id,
+             SUM(c) AS c
+      FROM inbound_trips
       WHERE ${endedAtCondition}
       GROUP BY end_station_id
     ) it

@@ -21,10 +21,6 @@ services:
 
   mapserver:
     build: ./mapserver
-    depends_on:
-      clickhouse:
-        condition: service_healthy
-        restart: false
     healthcheck:
       test: "wget -q -O - 'http://localhost:3001/ping' || exit 1"
       interval: 1m30s
@@ -44,10 +40,6 @@ services:
 
   map:
     build: ./map
-    depends_on:
-      mapserver:
-        condition: service_healthy
-        restart: false
     volumes:
       - ./map:/usr/app
     ports:
