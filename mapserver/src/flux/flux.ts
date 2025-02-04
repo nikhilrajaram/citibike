@@ -16,8 +16,12 @@ const getDateCondition = (
   { startDate, endDate, startTime, endTime, daysOfWeek }: FluxQuery,
   field: "started_at" | "ended_at"
 ) => {
+  const startDay = dayjs(startDate, "HHmmss");
+  const endDay = dayjs(endDate, "HHmmss");
   let condition = `
-    toYYYYMMDD(${field}) BETWEEN '${startDate}' AND '${endDate}'
+    ${field} BETWEEN '${startDay.format("YYYY-MM-DD")}' AND '${endDay.format(
+    "YYYY-MM-DD"
+  )}'
   `;
 
   if (startTime && endTime) {
