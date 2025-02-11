@@ -1,7 +1,9 @@
 import argparse
+import os
 
 from archive_transformer import ArchiveTransformer
 from archive_extractor import ArchiveExtractor
+from uploader import Uploader
 
 
 def parse_args():
@@ -20,6 +22,16 @@ def parse_args():
         action="store_true",
         help="Extract and transform data",
     )
+    parser.add_argument(
+        "-u",
+        "--upload",
+        action="store_true",
+        help="Upload data to S3",
+    )
+    parser.add_argument(
+        "--bucket_name",
+        help="S3 bucket name",
+    )
     parser.add_argument("--out_dir", help="Output directory", default="./data")
     return parser.parse_args()
 
@@ -32,3 +44,7 @@ if __name__ == "__main__":
     if args.transform:
         transformer = ArchiveTransformer(args.out_dir)
         transformer.transform_archives()
+    if args.upload:
+        pq_dir = os.path.join(args.out_dir, "parquet")
+        uploader = Uploader(pq_dir, args.bucket_name)
+        uploader.upload()
