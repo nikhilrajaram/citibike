@@ -1,6 +1,7 @@
 import { Dayjs } from "dayjs";
+import { fetch } from 'expo/fetch';
 import { useEffect } from "react";
-import { DAYS_OF_WEEK } from "../util/days-of-week";
+import { DAYS_OF_WEEK } from "../constants/days-of-week";
 
 export type FluxPoint = {
   stationId: string;
@@ -51,9 +52,14 @@ export const useFlux = (
     try {
       const response = await fetch(
         `${
-          process.env.NEXT_PUBLIC_MAPSERVER_URL
+          process.env.EXPO_PUBLIC_MAPSERVER_URL
         }/flux?${queryParams.toString()}`,
-        { signal: abortController?.signal }
+        {
+          signal: abortController?.signal,
+          headers: {
+            Accept: "text/event-stream",
+          },
+        }
       );
       const reader = response.body?.getReader();
       if (!reader) {

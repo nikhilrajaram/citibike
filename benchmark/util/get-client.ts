@@ -7,7 +7,9 @@ const timeout = Math.pow(2, 31) - 1;
 export const getClient = () => {
   if (!client) {
     client = createClient({
-      url: "http://localhost:8123",
+      url: "https://bibufxd4zn.us-east-1.aws.clickhouse.cloud:8443",
+      username: 'default',
+      password: 'nlqI9RvxKzvN_',
       request_timeout: timeout,
       clickhouse_settings: {
         mutations_sync: "1",

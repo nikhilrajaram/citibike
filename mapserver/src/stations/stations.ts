@@ -23,8 +23,8 @@ export const getStationsById = () => {
         short_name AS stationId,
         station_id AS currentStationId,
         name AS stationName,
-        latitude AS latitude,
-        longitude AS longitude,
+        lat AS latitude,
+        lon AS longitude,
         capacity AS capacity
       FROM current_stations;
     `;

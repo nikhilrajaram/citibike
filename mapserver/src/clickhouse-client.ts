@@ -6,7 +6,9 @@ export const getClient = () => {
   return (
     client ||
     createClient({
-      url: "http://clickhouse:8123",
+      url: "https://bibufxd4zn.us-east-1.aws.clickhouse.cloud:8443",
+      username: 'default',
+      password: 'nlqI9RvxKzvN_',
       clickhouse_settings: {
         max_threads: 1,
         max_memory_usage: "8G",
