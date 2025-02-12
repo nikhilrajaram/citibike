@@ -1,0 +1,38 @@
+services:
+  mapserver:
+    build: ./mapserver
+    restart: always
+    healthcheck:
+      test: "wget -q -O - 'http://localhost:3001/ping' || exit 1"
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+    volumes:
+      - ./mapserver:/usr/app
+    ports:
+      - "3001:3001"
+    networks:
+      - citibike_network
+    environment:
+      - CLICKHOUSE_URL=${CLICKHOUSE_URL:-http://clickhouse:8123}
+      - CLICKHOUSE_USER=${CLICKHOUSE_USER:-default}
+      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD:-}
+    command: node ./node_modules/nodemon/bin/nodemon src/index.ts
+
+  map:
+    build: ./map
+    restart: always
+    volumes:
+      - ./map:/usr/app
+    ports:
+      - "3000:3000"
+    networks:
+      - citibike_network
+    command: npm run dev
+    depends_on:
+      - mapserver
+
+networks:
+  citibike_network:
+    driver: bridge
