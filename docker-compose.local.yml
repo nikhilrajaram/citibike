@@ -20,33 +20,16 @@ services:
       - citibike_network
 
   mapserver:
-    build: ./mapserver
-    healthcheck:
-      test: "wget -q -O - 'http://localhost:3001/ping' || exit 1"
-      interval: 1m30s
-      timeout: 30s
-      retries: 5
-      start_period: 30s
-    volumes:
-      - ./mapserver:/usr/app
-    ports:
-      - "3001:3001"
-    networks:
-      - citibike_network
-    environment:
-      - CLICKHOUSE_HOST=clickhouse
-      - CLICKHOUSE_PORT=8123
-    command: node ./node_modules/nodemon/bin/nodemon src/index.ts
+    extends:
+      file: docker-compose.yml
+      service: mapserver
+    depends_on:
+      - clickhouse
 
   map:
-    build: ./map
-    volumes:
-      - ./map:/usr/app
-    ports:
-      - "3000:3000"
-    networks:
-      - citibike_network
-    command: npm run dev
+    extends:
+      file: docker-compose.yml
+      service: map
 
 networks:
   citibike_network:

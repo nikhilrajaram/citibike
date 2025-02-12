@@ -1,0 +1,40 @@
+services:
+  pipeline:
+    build: ./pipeline
+    volumes:
+      - ./pipeline/src:/app/src
+      - ./data:/data
+    command: [ "python", "-u", "src/pipeline.py", "-e", "-t", "--out_dir=/data" ]
+    environment:
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${AWS_REGION}
+      - DASK_N_WORKERS=${DASK_N_WORKERS}
+      - DASK_MEMORY_PER_WORKER=${DASK_MEMORY_PER_WORKER}
+    ports:
+      # expose dask dashboard
+      - "8787:8787"
+    networks:
+      - citibike_network
+
+  clickhouse:
+    extends:
+      file: docker-compose.local.yml
+      service: clickhouse
+    depends_on:
+      pipeline:
+        condition: service_completed_successfully
+
+  mapserver:
+    extends:
+      file: docker-compose.local.yml
+      service: mapserver
+
+  map:
+    extends:
+      file: docker-compose.local.yml
+      service: map
+
+networks:
+  citibike_network:
+    driver: bridge
