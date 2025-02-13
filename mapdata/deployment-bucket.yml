@@ -1,0 +1,45 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Resources:
+  LambdaDeploymentBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteOldVersions
+            Status: Enabled
+            NoncurrentVersionExpiration:
+              NoncurrentDays: 90
+          - Id: DeleteOldFiles
+            Status: Enabled
+            ExpirationInDays: 90
+
+  LambdaDeploymentBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref LambdaDeploymentBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: RestrictToAccountAndCloudFormation
+            Effect: Allow
+            Principal:
+              AWS: !Sub arn:aws:iam::${AWS::AccountId}:root
+            Action:
+              - s3:PutObject
+              - s3:GetObject
+            Resource: !Sub ${LambdaDeploymentBucket.Arn}/*
+
+Outputs:
+  LambdaDeploymentBucketName:
+    Value: !Ref LambdaDeploymentBucket
+    Export:
+      Name: LambdaDeploymentBucketName
