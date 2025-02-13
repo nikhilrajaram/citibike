@@ -21,6 +21,25 @@ Resources:
         OriginAccessControlOriginType: s3
         SigningBehavior: always
         SigningProtocol: sigv4
+    
+  CORSHeadersPolicy:
+    Type: AWS::CloudFront::ResponseHeadersPolicy
+    Properties:
+      ResponseHeadersPolicyConfig:
+        Name: !Sub ${AWS::StackName}-map-data-cors-policy
+        CorsConfig:
+          AccessControlAllowCredentials: false
+          AccessControlAllowHeaders:
+            Items: ['Content-Type', 'Accept', 'Accept-Encoding']
+          AccessControlAllowMethods:
+            Items: ['GET', 'HEAD']
+          AccessControlAllowOrigins:
+            Items: 
+              - 'http://localhost:3000'
+              # todo: replace with prod domain
+          AccessControlExposeHeaders:
+            Items: ['Content-Length', 'Content-Range']
+          OriginOverride: false
 
   MapDataCloudFrontDistribution:
     Type: AWS::CloudFront::Distribution
@@ -39,7 +58,7 @@ Resources:
           ViewerProtocolPolicy: redirect-to-https
           CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6 # CachingOptimized
           OriginRequestPolicyId: 88a5eaf4-2fd4-4709-b370-b4c650ea3fcf # CORS-S3Origin
-          ResponseHeadersPolicyId: 67f7725c-6f97-4210-82d7-5512b31e9d03 # SecurityHeadersPolicy
+          ResponseHeadersPolicyId: !Ref CORSHeadersPolicy
 
   MapDataBucketCloudFrontReadPolicy:
     Type: AWS::S3::BucketPolicy

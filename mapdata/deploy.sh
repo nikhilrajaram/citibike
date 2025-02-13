@@ -16,7 +16,7 @@ PROFILE=${AWS_PROFILE:-default}
 echo "deploying deployment stack"
 aws --profile $PROFILE \
   cloudformation deploy \
-  --template-file deployment-bucket.yml \
+  --template-file cloudformation/deployment-bucket.yml \
   --stack-name deployment \
   --capabilities CAPABILITY_IAM
 
@@ -48,7 +48,7 @@ rm -rf "${DIST_DIR}"
 echo "deploying citibike stack"
 aws --profile $PROFILE \
   cloudformation deploy \
-  --template-file stack.yml \
+  --template-file cloudformation/citibike.yml \
   --stack-name citibike \
   --capabilities CAPABILITY_IAM
 
