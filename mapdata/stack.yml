@@ -34,6 +34,7 @@ Resources:
             S3OriginConfig:
               OriginAccessIdentity: ""
         DefaultCacheBehavior:
+          Compress: true
           TargetOriginId: !Sub ${AWS::StackName}-map-data-distribution-s3-origin
           ViewerProtocolPolicy: redirect-to-https
           CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6 # CachingOptimized

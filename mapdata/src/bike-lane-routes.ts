@@ -14,7 +14,7 @@ if (!bikeLaneGeoJSONUrl) {
   throw new Error("BIKE_LANE_GEOJSON_URL is required");
 }
 const bucketName = process.env.BUCKET_NAME;
-const s3Key = "routes/routes.geojson.gz";
+const s3Key = "routes/routes.geojson";
 const metadataKey = "routes/routes-metadata.json";
 
 const config = {
@@ -38,19 +38,6 @@ const downloadBikeRoutes = async () => {
 const hashData = async <T extends Record<string, any>>(data: T) => {
   return createHash("sha256").update(JSON.stringify(data)).digest("hex");
 };
-
-const compressData = <T extends Record<string, any>>(
-  data: T
-): Promise<Buffer<ArrayBufferLike>> =>
-  new Promise((resolve, reject) => {
-    gzip(JSON.stringify(data), (err, result) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(result);
-      }
-    });
-  });
 
 const getMetadata = async (): Promise<Metadata | undefined> => {
   try {
@@ -84,7 +71,6 @@ const upload = async (data: string, metadata: Metadata) => {
       Key: s3Key,
       Body: data,
       ContentType: "application/json",
-      ContentEncoding: "gzip",
       CacheControl: "public, max-age=604800",
     })
   );
@@ -104,11 +90,11 @@ const upload = async (data: string, metadata: Metadata) => {
 export const processBikeRoutes = async () => {
   const geoJson = await downloadBikeRoutes();
   const hash = await hashData(geoJson);
-  const compressed = await compressData(geoJson);
 
-  await upload(compressed.toString("base64"), {
+  const json = JSON.stringify(geoJson);
+  await upload(json, {
     lastUpdated: new Date().toISOString(),
     dataHash: hash,
-    size: compressed.byteLength,
+    size: json.length,
   });
 };
