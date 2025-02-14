@@ -16,6 +16,8 @@ import { useState } from "react";
 import { DAYS_OF_WEEK } from "../util/days-of-week";
 
 type FluxFilterProps = {
+  showFlux: boolean;
+  setShowFlux: (showFlux: boolean) => void;
   startDate: Dayjs;
   setStartDate: (date: Dayjs) => void;
   endDate: Dayjs;
@@ -36,6 +38,8 @@ type BikeLaneLayerProps = {
 type Props = FluxFilterProps & BikeLaneLayerProps;
 
 export const Sidebar = ({
+  showFlux,
+  setShowFlux,
   startDate,
   setStartDate,
   endDate,
@@ -61,6 +65,10 @@ export const Sidebar = ({
 
   const hideDrawer = () => {
     setOpen(false);
+  };
+
+  const handleShowFluxChange = (e: CheckboxChangeEvent) => {
+    setShowFlux(e.target.checked);
   };
 
   const handleTimeRangeChange = (dates: unknown) => {
@@ -108,7 +116,7 @@ export const Sidebar = ({
     setEndDate(end);
   };
 
-  const handleBikeLaneChange = (e: CheckboxChangeEvent) => {
+  const handleShowBikeLaneChange = (e: CheckboxChangeEvent) => {
     setShowBikeLanes(e.target.checked);
   };
 
@@ -121,12 +129,16 @@ export const Sidebar = ({
       mask={false}
     >
       <div className="flex flex-col gap-4">
+        <Title level={4}>Layers</Title>
         <div className="flex flex-col">
-          <Title level={5}>Layers</Title>
-          <Checkbox checked={showBikeLanes} onChange={handleBikeLaneChange}>
+          <Checkbox checked={showFlux} onChange={handleShowFluxChange}>
+            Flux
+          </Checkbox>
+          <Checkbox checked={showBikeLanes} onChange={handleShowBikeLaneChange}>
             Bike lanes
           </Checkbox>
         </div>
+        <Title level={4}>Filters</Title>
         <div className="flex flex-col">
           <Title level={5}>Date range</Title>
           <Space direction="vertical" size={12}>

@@ -9,6 +9,7 @@ import { DAYS_OF_WEEK } from "./util/days-of-week";
 const queryClient = new QueryClient();
 
 export const App = () => {
+  const [showFlux, setShowFlux] = useState(true);
   const today = dayjs();
   const [startDate, setStartDate] = useState<Dayjs>(today.subtract(1, "year"));
   const [startTime, setStartTime] = useState<Dayjs>(
@@ -26,6 +27,8 @@ export const App = () => {
     <QueryClientProvider client={queryClient}>
       <div>
         <Sidebar
+          showFlux={showFlux}
+          setShowFlux={setShowFlux}
           startDate={startDate}
           setStartDate={setStartDate}
           endDate={endDate}
@@ -41,7 +44,7 @@ export const App = () => {
         ></Sidebar>
         <div className="w-full h-full z-0">
           <BikeMap
-            showFlux
+            showFlux={showFlux}
             fluxFilter={{
               startDate,
               endDate,
