@@ -53,7 +53,7 @@ export const Sidebar = ({
   showBikeLanes,
   setShowBikeLanes,
 }: Props) => {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(true);
 
   const [isDayFilterDisabled, setIsDayFilterDisabled] = useState<boolean>(
     endDate.diff(startDate, "day") < 7
