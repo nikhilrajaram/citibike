@@ -32,7 +32,7 @@ export const BikeMap = ({
         zoom: 11,
       }}
       style={{ width: "100vw", height: "100vh" }}
-      mapStyle="mapbox://styles/mapbox/streets-v12"
+      mapStyle="mapbox://styles/mapbox/light-v11"
     >
       {showFlux && (
         <FluxLayer
