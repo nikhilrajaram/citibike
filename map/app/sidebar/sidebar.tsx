@@ -1,6 +1,8 @@
-import { DatePicker, Space, Tag, TimePicker } from "antd";
+import { RightOutlined } from "@ant-design/icons";
+import { Button, DatePicker, Drawer, Space, Tag, TimePicker } from "antd";
 import Title from "antd/es/typography/Title";
 import { Dayjs } from "dayjs";
+import { useState } from "react";
 import { DAYS_OF_WEEK } from "../util/days-of-week";
 
 export const Sidebar = ({
@@ -26,6 +28,16 @@ export const Sidebar = ({
   daysOfWeek: string[];
   setDaysOfWeek: (days: string[]) => void;
 }) => {
+  const [open, setOpen] = useState(false);
+
+  const showDrawer = () => {
+    setOpen(true);
+  };
+
+  const hideDrawer = () => {
+    setOpen(false);
+  };
+
   const handleTimeRangeChange = (dates: unknown) => {
     if (!dates || !Array.isArray(dates)) {
       return;
@@ -50,8 +62,8 @@ export const Sidebar = ({
     setEndDate(dates[1]);
   };
 
-  return (
-    <div className="absolute top-0 left-0 bg-opacity-80 bg-white p-4 z-50 margin-20 shadow-md">
+  return open ? (
+    <Drawer onClose={hideDrawer} open={open} placement="left" width={280} mask={false}>
       <div className="flex flex-col gap-4">
         <div className="flex flex-col">
           <Title level={5}>Time of day</Title>
@@ -65,7 +77,7 @@ export const Sidebar = ({
         </div>
         <div className="flex flex-col">
           <Title level={5}>Day of week</Title>
-          <div className="flex flex-row">
+          <div className="flex flex-row justify-between">
             {DAYS_OF_WEEK.map((day) => (
               <Tag.CheckableTag
                 key={day}
@@ -87,6 +99,22 @@ export const Sidebar = ({
           </Space>
         </div>
       </div>
+    </Drawer>
+  ) : (
+    <div className="absolute left-0 z-10" onClick={showDrawer}>
+      <Button
+        style={{
+          height: "60px",
+          width: "30px",
+          borderRadius: "0",
+          position: "absolute",
+          left: 0,
+          top: "50%",
+          transform: "translateY(100%)",
+          boxShadow: "2px 0 5px rgba(7, 7, 7, 0.1)",
+        }}
+        icon={<RightOutlined />}
+      ></Button>
     </div>
   );
 };
