@@ -1,0 +1,152 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Resources:
+  MapDataBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub ${AWS::StackName}-map-data
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+
+  MapDataOAC:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub ${AWS::StackName}-map-data-oac
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+    
+  CORSHeadersPolicy:
+    Type: AWS::CloudFront::ResponseHeadersPolicy
+    Properties:
+      ResponseHeadersPolicyConfig:
+        Name: !Sub ${AWS::StackName}-map-data-cors-policy
+        CorsConfig:
+          AccessControlAllowCredentials: false
+          AccessControlAllowHeaders:
+            Items: ['Content-Type', 'Accept', 'Accept-Encoding']
+          AccessControlAllowMethods:
+            Items: ['GET', 'HEAD']
+          AccessControlAllowOrigins:
+            Items: 
+              - 'http://localhost:3000'
+              # todo: replace with prod domain
+          AccessControlExposeHeaders:
+            Items: ['Content-Length', 'Content-Range']
+          OriginOverride: false
+
+  MapDataCloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Origins:
+          - Id: !Sub ${AWS::StackName}-map-data-distribution-s3-origin
+            DomainName: !GetAtt MapDataBucket.RegionalDomainName
+            OriginAccessControlId: !Ref MapDataOAC
+            S3OriginConfig:
+              OriginAccessIdentity: ""
+        DefaultCacheBehavior:
+          Compress: true
+          TargetOriginId: !Sub ${AWS::StackName}-map-data-distribution-s3-origin
+          ViewerProtocolPolicy: redirect-to-https
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6 # CachingOptimized
+          OriginRequestPolicyId: 88a5eaf4-2fd4-4709-b370-b4c650ea3fcf # CORS-S3Origin
+          ResponseHeadersPolicyId: !Ref CORSHeadersPolicy
+
+  MapDataBucketCloudFrontReadPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref MapDataBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          Sid: AllowCloudFrontServicePrincipalReadOnly
+          Effect: Allow
+          Principal:
+            Service: "cloudfront.amazonaws.com"
+          Action: "s3:GetObject"
+          Resource: !Sub ${MapDataBucket.Arn}/*
+          Condition:
+            StringEquals:
+              AWS:SourceArn: !Sub arn:aws:cloudfront::${AWS::AccountId}:distribution/${MapDataCloudFrontDistribution.Id}
+
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: S3Access
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                Resource:
+                  - !Sub ${MapDataBucket.Arn}/*
+              - Effect: Allow
+                Action:
+                  - s3:ListBucket
+                  - s3:ListAllMyBuckets
+                Resource: "*"
+        - PolicyName: CloudFrontAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cloudfront:CreateCloudFrontOriginAccessIdentity
+                Resource: "*"
+
+  UpdaterFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: index.handler
+      Runtime: nodejs22.x
+      Timeout: 300
+      MemorySize: 512
+      Code:
+        S3Bucket: !ImportValue LambdaDeploymentBucketName
+        S3Key: deployments/update-bike-lanes.zip
+      Environment:
+        Variables:
+          BUCKET_NAME: !Ref MapDataBucket
+          BIKE_LANE_GEOJSON_URL: "https://data.cityofnewyork.us/api/geospatial/mzxg-pwib?accessType=DOWNLOAD&method=export&format=GeoJSON"
+      Role: !GetAtt LambdaExecutionRole.Arn
+
+  ScheduleRule:
+    Type: AWS::Events::Rule
+    Properties:
+      ScheduleExpression: rate(30 days)
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt UpdaterFunction.Arn
+          Id: UpdateBikeLanesTarget
+          Input: |
+            {
+              "bikeRoutes": true
+            }
+
+Outputs:
+  CloudFrontDomain:
+    Value: !GetAtt MapDataCloudFrontDistribution.DomainName
+  MapDataBucketName:
+    Value: !Ref MapDataBucket
+  LambdaFunctionName:
+    Value: !Ref UpdaterFunction
