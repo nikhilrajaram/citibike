@@ -1,27 +1,16 @@
 import { Typography } from "antd";
 import Title from "antd/es/typography/Title";
 import * as d3 from "d3";
-import { Dayjs } from "dayjs";
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { Marker } from "react-map-gl";
+import { FluxContext } from "../context/flux-context";
 import { FluxPoint, useFlux } from "../hooks/use-flux";
 
-export type FluxFilter = {
-  startDate: Dayjs;
-  endDate: Dayjs;
-  startTime: Dayjs;
-  endTime: Dayjs;
-  daysOfWeek: string[];
-};
-
-export const FluxLayer = ({
-  startDate,
-  endDate,
-  startTime,
-  endTime,
-  daysOfWeek,
-}: FluxFilter) => {
+export const FluxLayer = () => {
   const [flux, setFlux] = useState<FluxPoint[]>([]);
+
+  const { startDate, endDate, startTime, endTime, daysOfWeek } =
+    useContext(FluxContext);
 
   const daysBetweenInclusive = endDate.diff(startDate, "day") + 1;
 
@@ -50,11 +39,9 @@ export const FluxLayer = ({
   // todo: tune/configure this?
   const fluxScaleBucketWidth = 20;
   const fluxScaleBoundLow =
-    Math.floor(minFlux / fluxScaleBucketWidth) *
-    fluxScaleBucketWidth;
+    Math.floor(minFlux / fluxScaleBucketWidth) * fluxScaleBucketWidth;
   const fluxScaleBoundHigh =
-    Math.ceil(maxFlux / fluxScaleBucketWidth) *
-    fluxScaleBucketWidth;
+    Math.ceil(maxFlux / fluxScaleBucketWidth) * fluxScaleBucketWidth;
   const fluxScaleRange = fluxScaleBoundHigh - fluxScaleBoundLow;
   const fluxScaleNBuckets = fluxScaleRange / fluxScaleBucketWidth;
 
@@ -162,7 +149,7 @@ export const FluxLayer = ({
                     <Typography.Text>
                       More than {Math.abs(left)} outbound
                     </Typography.Text>
-                  ) : i === (fluxScaleNBuckets - 1) ? (
+                  ) : i === fluxScaleNBuckets - 1 ? (
                     <Typography.Text>
                       More than {Math.abs(left)} inbound
                     </Typography.Text>
