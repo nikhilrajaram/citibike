@@ -86,15 +86,22 @@ export const queryFlux = async (query: FluxQuery, res: express.Response) => {
     stream.on(
       "data",
       (
-        rows: Row<{ stationId: string; inbound: number; outbound: number }>[]
+        rows: Row<{
+          stationId: string;
+          // note: Clickhouse returns inbound/outbound as strings
+          inbound: string;
+          outbound: string;
+        }>[]
       ) => {
         rows.forEach((row) => {
-          const stationFlux = row.json();
-          const station = stationsById[stationFlux.stationId];
+          const { stationId, inbound, outbound } = row.json();
+          const station = stationsById[stationId];
           const content =
             JSON.stringify({
               ...station,
-              ...stationFlux,
+              stationId,
+              inbound: Number.parseInt(inbound),
+              outbound: Number.parseInt(outbound),
             }) + "\n";
           res.write(content);
         });
