@@ -8,11 +8,12 @@ import {
   Tag,
   TimePicker,
 } from "antd";
+import { CheckboxChangeEvent } from "antd/es/checkbox";
+import { RangePickerProps } from "antd/es/date-picker";
 import Title from "antd/es/typography/Title";
 import { Dayjs } from "dayjs";
 import { useState } from "react";
 import { DAYS_OF_WEEK } from "../util/days-of-week";
-import { CheckboxChangeEvent } from "antd/es/checkbox";
 
 type FluxFilterProps = {
   startDate: Dayjs;
@@ -25,12 +26,12 @@ type FluxFilterProps = {
   setEndTime: (date: Dayjs) => void;
   daysOfWeek: string[];
   setDaysOfWeek: (days: string[]) => void;
-}
+};
 
 type BikeLaneLayerProps = {
   showBikeLanes: boolean;
   setShowBikeLanes: (show: boolean) => void;
-}
+};
 
 type Props = FluxFilterProps & BikeLaneLayerProps;
 
@@ -49,6 +50,10 @@ export const Sidebar = ({
   setShowBikeLanes,
 }: Props) => {
   const [open, setOpen] = useState(false);
+
+  const [isDayFilterDisabled, setIsDayFilterDisabled] = useState<boolean>(
+    endDate.diff(startDate, "day") < 7
+  );
 
   const showDrawer = () => {
     setOpen(true);
@@ -73,18 +78,39 @@ export const Sidebar = ({
     );
   };
 
-  const handleDateRangeChange = (dates: unknown) => {
-    if (!dates || !Array.isArray(dates)) {
+  const handleDateRangeChange = (
+    dates: Parameters<NonNullable<RangePickerProps["onChange"]>>[0]
+  ) => {
+    if (!dates) {
       return;
     }
 
-    setStartDate(dates[0]);
-    setEndDate(dates[1]);
+    const [start, end] = dates;
+    if (!start || !end) {
+      return;
+    }
+
+    const daysBetween = end.diff(start, "day");
+    if (daysBetween < 7) {
+      const newDaysOfWeek = [];
+      for (let i = 0; i < 7; i++) {
+        if (i <= daysBetween) {
+          newDaysOfWeek.push(start.add(i, "day").format("dddd"));
+        } else {
+        }
+      }
+      setDaysOfWeek(newDaysOfWeek);
+      setIsDayFilterDisabled(true);
+    }
+
+    setIsDayFilterDisabled(false);
+    setStartDate(start);
+    setEndDate(end);
   };
 
-  const handleBikeLaneChange = (e: CheckboxChangeEvent) => {  
+  const handleBikeLaneChange = (e: CheckboxChangeEvent) => {
     setShowBikeLanes(e.target.checked);
-  }
+  };
 
   return open ? (
     <Drawer
@@ -97,7 +123,18 @@ export const Sidebar = ({
       <div className="flex flex-col gap-4">
         <div className="flex flex-col">
           <Title level={5}>Layers</Title>
-          <Checkbox checked={showBikeLanes} onChange={handleBikeLaneChange}>Bike lanes</Checkbox>
+          <Checkbox checked={showBikeLanes} onChange={handleBikeLaneChange}>
+            Bike lanes
+          </Checkbox>
+        </div>
+        <div className="flex flex-col">
+          <Title level={5}>Date range</Title>
+          <Space direction="vertical" size={12}>
+            <DatePicker.RangePicker
+              value={[startDate, endDate]}
+              onChange={handleDateRangeChange}
+            />
+          </Space>
         </div>
         <div className="flex flex-col">
           <Title level={5}>Time of day</Title>
@@ -113,24 +150,27 @@ export const Sidebar = ({
           <Title level={5}>Day of week</Title>
           <div className="flex flex-row justify-between">
             {DAYS_OF_WEEK.map((day) => (
-              <Tag.CheckableTag
-                key={day}
-                checked={daysOfWeek.includes(day)}
-                onChange={(checked) => handleDaysOfWeekChange(day, checked)}
+              <span
+                key={`span-${day}`}
+                style={
+                  isDayFilterDisabled
+                    ? {
+                        opacity: 0.5,
+                        pointerEvents: "none",
+                      }
+                    : {}
+                }
               >
-                {day.charAt(0).toUpperCase()}
-              </Tag.CheckableTag>
+                <Tag.CheckableTag
+                  key={day}
+                  checked={daysOfWeek.includes(day)}
+                  onChange={(checked) => handleDaysOfWeekChange(day, checked)}
+                >
+                  {day.charAt(0).toUpperCase()}
+                </Tag.CheckableTag>
+              </span>
             ))}
           </div>
-        </div>
-        <div className="flex flex-col">
-          <Title level={5}>Date range</Title>
-          <Space direction="vertical" size={12}>
-            <DatePicker.RangePicker
-              value={[startDate, endDate]}
-              onChange={handleDateRangeChange}
-            />
-          </Space>
         </div>
       </div>
     </Drawer>
