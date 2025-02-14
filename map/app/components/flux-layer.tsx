@@ -30,7 +30,6 @@ export const FluxLayer = ({
     const rides = data.map((f) => f.outbound + f.inbound);
     const minFlux = Math.min(...fluxes);
     const maxFlux = Math.max(...fluxes);
-    const minRides = Math.min(...rides);
     const maxRides = Math.max(...rides);
 
     const fluxScale = d3.scaleDiverging(
@@ -38,7 +37,7 @@ export const FluxLayer = ({
       ["red", "rgb(255, 237, 148)", "rgb(0, 209, 0)"]
     );
     const rideScale = d3.scaleLinear(
-      [0, Math.max(Math.abs(minRides), Math.abs(maxRides))],
+      [0, Math.abs(maxRides)],
       [0, 1]
     );
     setFluxScale(() => fluxScale);
