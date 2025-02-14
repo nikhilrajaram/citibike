@@ -1,55 +1,58 @@
 import { useEffect, useState } from "react";
 import { Layer, Source } from "react-map-gl";
+import { useQuery } from "@tanstack/react-query";
 
 const BIKE_LANES_URL = process.env.NEXT_PUBLIC_BIKE_LANE_GEOJSON_URL;
 
 export const BikeLaneLayer = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [data, setData] = useState(null);
 
-  useEffect(() => {
-    if (!isLoading) {
-      return;
-    }
-    
-    const controller = new AbortController();
-    if (!BIKE_LANES_URL) {
-      return;
-    }
-    
-    fetch(BIKE_LANES_URL, {
-      signal: controller.signal,
-      headers: {
-        "Accept-Encoding": "json",
-      },
-    })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error(`HTTP error... status: ${response.status}`);
-        }
-        return response.json();
-      })
-      .then((geoJson) => {
-        setData(geoJson);
-        setError(null);
-      })
-      .catch((err) => {
-        if (err.name === "AbortError") {
-          return;
-        }
-        console.error("Error loading bike lanes:", err);
-        setError(err);
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
+  const { isPending, data } = useQuery({
+    queryKey: ["bike-lanes"],
+    queryFn: () => {
+      if (!BIKE_LANES_URL) {
+        return;
+      }
 
-    return () => controller.abort();
+      const controller = new AbortController();
+
+      return fetch(BIKE_LANES_URL, {
+        signal: controller.signal,
+        headers: {
+          "Accept-Encoding": "json",
+        },
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error(`HTTP error... status: ${response.status}`);
+          }
+          return response.json();
+        })
+        .then((geoJson) => {
+          setError(null);
+          return geoJson;
+        })
+        .catch((err) => {
+          if (err.name === "AbortError") {
+            return;
+          }
+          console.error("Error loading bike lanes:", err);
+          setError(err);
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
+    },
+    staleTime: Number.POSITIVE_INFINITY,
   });
 
   if (!BIKE_LANES_URL) {
-    console.warn('BIKE_LANES_URL is not set');
+    console.warn("BIKE_LANES_URL is not set");
+    return null;
+  }
+
+  if (isPending) {
     return null;
   }
 

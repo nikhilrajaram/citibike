@@ -1,9 +1,38 @@
 import { RightOutlined } from "@ant-design/icons";
-import { Button, DatePicker, Drawer, Space, Tag, TimePicker } from "antd";
+import {
+  Button,
+  Checkbox,
+  DatePicker,
+  Drawer,
+  Space,
+  Tag,
+  TimePicker,
+} from "antd";
 import Title from "antd/es/typography/Title";
 import { Dayjs } from "dayjs";
 import { useState } from "react";
 import { DAYS_OF_WEEK } from "../util/days-of-week";
+import { CheckboxChangeEvent } from "antd/es/checkbox";
+
+type FluxFilterProps = {
+  startDate: Dayjs;
+  setStartDate: (date: Dayjs) => void;
+  endDate: Dayjs;
+  setEndDate: (date: Dayjs) => void;
+  startTime: Dayjs;
+  setStartTime: (date: Dayjs) => void;
+  endTime: Dayjs;
+  setEndTime: (date: Dayjs) => void;
+  daysOfWeek: string[];
+  setDaysOfWeek: (days: string[]) => void;
+}
+
+type BikeLaneLayerProps = {
+  showBikeLanes: boolean;
+  setShowBikeLanes: (show: boolean) => void;
+}
+
+type Props = FluxFilterProps & BikeLaneLayerProps;
 
 export const Sidebar = ({
   startDate,
@@ -16,18 +45,9 @@ export const Sidebar = ({
   setEndTime,
   daysOfWeek,
   setDaysOfWeek,
-}: {
-  startDate: Dayjs;
-  setStartDate: (date: Dayjs) => void;
-  endDate: Dayjs;
-  setEndDate: (date: Dayjs) => void;
-  startTime: Dayjs;
-  setStartTime: (date: Dayjs) => void;
-  endTime: Dayjs;
-  setEndTime: (date: Dayjs) => void;
-  daysOfWeek: string[];
-  setDaysOfWeek: (days: string[]) => void;
-}) => {
+  showBikeLanes,
+  setShowBikeLanes,
+}: Props) => {
   const [open, setOpen] = useState(false);
 
   const showDrawer = () => {
@@ -62,9 +82,23 @@ export const Sidebar = ({
     setEndDate(dates[1]);
   };
 
+  const handleBikeLaneChange = (e: CheckboxChangeEvent) => {  
+    setShowBikeLanes(e.target.checked);
+  }
+
   return open ? (
-    <Drawer onClose={hideDrawer} open={open} placement="left" width={280} mask={false}>
+    <Drawer
+      onClose={hideDrawer}
+      open={open}
+      placement="left"
+      width={280}
+      mask={false}
+    >
       <div className="flex flex-col gap-4">
+        <div className="flex flex-col">
+          <Title level={5}>Layers</Title>
+          <Checkbox checked={showBikeLanes} onChange={handleBikeLaneChange}>Bike lanes</Checkbox>
+        </div>
         <div className="flex flex-col">
           <Title level={5}>Time of day</Title>
           <TimePicker.RangePicker
