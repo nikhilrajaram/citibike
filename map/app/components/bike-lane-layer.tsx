@@ -49,6 +49,7 @@ export const BikeLaneLayer = () => {
   });
 
   if (!BIKE_LANES_URL) {
+    console.warn('BIKE_LANES_URL is not set');
     return null;
   }
 
