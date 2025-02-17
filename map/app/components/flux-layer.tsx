@@ -23,10 +23,7 @@ export const FluxLayer = () => {
     )
   );
 
-  const normalizedStartTime = startTime.set("date", 0);
-  const normalizedEndTime = endTime.set("date", 0);
-  const hoursInSelection =
-    (normalizedEndTime.diff(normalizedStartTime, "hour", true) + 24) % 24;
+  const hoursInSelection = (endTime.diff(startTime, "hour", true) + 24) % 24;
 
   const { isPending, flux: fluxRaw } = useFlux({
     startDate,
@@ -79,6 +76,9 @@ export const FluxLayer = () => {
   // currently just uses a heuristic for binning with some hard-coded behavior
   // relies on d3.ticks to produce "nice" bins
   // uses a symmetric linear scale centered around zero for color grading
+  // undesirable consequences:
+  //  - no midpoint bins centered about zero as bins border zero
+  //  - bin numbers vary and can reach up to 7
   const nBins = clamp(Math.round((maxFlux - minFlux) / 5), 2, 5);
   const ticks = d3.ticks(minFlux, maxFlux, nBins);
   const bins = d3.bin().thresholds(ticks)(fluxes);
@@ -90,6 +90,11 @@ export const FluxLayer = () => {
     .scaleLinear<string>()
     .domain([-absExtent, 0, absExtent])
     .range(["red", "rgb(255, 237, 148)", "rgb(0, 209, 0)"]);
+  // extend the outer bins to the domain of the color scale
+  const fluxColorScaleDomain = fluxColorScale.domain();
+  bins[0].x0 = fluxColorScaleDomain[0];
+  bins[bins.length - 1].x1 =
+    fluxColorScaleDomain[fluxColorScaleDomain.length - 1];
 
   /**
    * Returns the color value for a flux value
@@ -100,15 +105,13 @@ export const FluxLayer = () => {
       return "rgb(255, 237, 148)";
     }
     // clamp the value within the domain of the scale
-    const domain = fluxColorScale.domain();
-    const clampedFlux = clamp(flux, domain[0], domain[domain.length - 1]);
     const bucketValue =
-      flux <= domain[0]
-        ? domain[0]
-        : (bins.find(
-            (b) =>
-              (b.x0 as number) < clampedFlux && clampedFlux <= (b.x1 as number)
-          )?.x0 as number);
+      flux <= -absExtent
+        ? -absExtent
+        : flux >= absExtent
+        ? absExtent
+        : (bins.find((b) => (b.x0 as number) <= flux && flux < (b.x1 as number))
+            ?.x0 as number);
     return fluxColorScale(bucketValue);
   };
 
@@ -168,14 +171,6 @@ export const FluxLayer = () => {
             // get bucket endpoints
             const left = bin.x0 as number;
             const right = bin.x1 as number;
-            const colorValue =
-              i === 0
-                ? -absExtent
-                : i === bins.length - 1
-                ? absExtent
-                : left < 0 && 0 < right
-                ? 0
-                : Math.round((left + right) / 2);
 
             const absLeft = Math.abs(left);
             const absRight = Math.abs(right);
@@ -186,7 +181,7 @@ export const FluxLayer = () => {
               >
                 <div
                   style={{
-                    backgroundColor: colorGradeFlux(colorValue),
+                    backgroundColor: colorGradeFlux((left + right) / 2),
                     width: "15px",
                     height: "15px",
                     borderRadius: "50%",
@@ -207,7 +202,7 @@ export const FluxLayer = () => {
                     <Typography.Text>
                       {Math.min(absLeft, absRight)} -{" "}
                       {Math.max(absLeft, absRight)}{" "}
-                      {colorValue > 0 ? "arriving" : "departing"}
+                      {left <= 0 && right <= 0 ? "departing" : "arriving"}
                     </Typography.Text>
                   )}
                 </div>

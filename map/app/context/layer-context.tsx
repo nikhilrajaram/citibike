@@ -12,6 +12,9 @@ type LayerSetters = {
 
 type LayerContextType = LayerOptions & LayerSetters;
 
+/**
+ * Context for managing the layer state
+ */
 export const LayerContext = createContext<LayerContextType>({
   showFlux: true,
   showBikeLanes: true,

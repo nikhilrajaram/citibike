@@ -48,7 +48,12 @@ export const useFlux = ({
     };
   });
 
-  const { isPending, data: flux } = useQuery({
+  const {
+    isPending,
+    data: flux,
+    refetch,
+    error,
+  } = useQuery({
     queryKey: [
       "flux",
       startDate.format("YYYYMMDD"),
@@ -68,23 +73,19 @@ export const useFlux = ({
     const controller = new AbortController();
     abortControllerRef.current = controller;
     const queryParams = new URLSearchParams(formatParams());
-    try {
-      const response = await fetch(
-        `${
-          process.env.NEXT_PUBLIC_MAPSERVER_URL
-        }/flux?${queryParams.toString()}`,
-        { signal: controller.signal }
-      );
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_MAPSERVER_URL}/flux?${queryParams.toString()}`,
+      { signal: controller.signal }
+    );
 
-      const data = await response.json();
-      return data as FluxPoint[];
-    } catch (e) {
-      if ((e as Error)?.name !== "AbortError") {
-        console.error(e);
-      }
-      return [];
-    }
+    const data = await response.json();
+    return data as FluxPoint[];
   };
+
+  if (!isPending && !flux && error?.name === "AbortError") {
+    // if the previous request was aborted, refetch
+    refetch();
+  }
 
   return { isPending, flux };
 };
