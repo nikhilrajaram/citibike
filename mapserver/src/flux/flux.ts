@@ -1,4 +1,3 @@
-import { Row } from "@clickhouse/client";
 import dayjs from "dayjs";
 import express from "express";
 import { getClient } from "../clickhouse-client";
@@ -86,37 +85,22 @@ export const queryFlux = async (query: FluxQuery, res: express.Response) => {
       format: "JSONEachRow",
       abort_signal: res.locals.abortController.signal,
     });
-    const stream = rows.stream();
+    const json = await rows.json<{
+      stationId: string;
+      // note: Clickhouse returns inbound/outbound as strings
+      inbound: string;
+      outbound: string;
+    }>();
 
-    stream.on(
-      "data",
-      (
-        rows: Row<{
-          stationId: string;
-          // note: Clickhouse returns inbound/outbound as strings
-          inbound: string;
-          outbound: string;
-        }>[]
-      ) => {
-        rows.forEach((row) => {
-          const { stationId, inbound, outbound } = row.json();
-          const station = stationsById[stationId];
-          const content =
-            JSON.stringify({
-              ...station,
-              stationId,
-              inbound: Number.parseInt(inbound),
-              outbound: Number.parseInt(outbound),
-            }) + "\n";
-          res.write(content);
-        });
-      }
+    res.json(
+      json.map(({ stationId, inbound, outbound }) => ({
+        ...stationsById[stationId],
+        stationId,
+        inbound: Number.parseInt(inbound),
+        outbound: Number.parseInt(outbound),
+      }))
     );
-
-    stream.on("end", () => {
-      res.end();
-    });
   } catch {
-    res.end();
+    res.json([]);
   }
 };

@@ -1,12 +1,19 @@
-import { useEffect, useState } from "react";
-import { Layer, Source } from "react-map-gl";
 import { useQuery } from "@tanstack/react-query";
+import { useEffect, useRef } from "react";
+import { Layer, Source } from "react-map-gl";
 
 const BIKE_LANES_URL = process.env.NEXT_PUBLIC_BIKE_LANE_GEOJSON_URL;
 
 export const BikeLaneLayer = () => {
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  });
 
   const { isPending, data } = useQuery({
     queryKey: ["bike-lanes"],
@@ -16,6 +23,7 @@ export const BikeLaneLayer = () => {
       }
 
       const controller = new AbortController();
+      abortControllerRef.current = controller;
 
       return fetch(BIKE_LANES_URL, {
         signal: controller.signal,
@@ -30,7 +38,6 @@ export const BikeLaneLayer = () => {
           return response.json();
         })
         .then((geoJson) => {
-          setError(null);
           return geoJson;
         })
         .catch((err) => {
@@ -38,10 +45,6 @@ export const BikeLaneLayer = () => {
             return;
           }
           console.error("Error loading bike lanes:", err);
-          setError(err);
-        })
-        .finally(() => {
-          setIsLoading(false);
         });
     },
     staleTime: Number.POSITIVE_INFINITY,

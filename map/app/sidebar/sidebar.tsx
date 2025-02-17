@@ -11,49 +11,29 @@ import {
 import { CheckboxChangeEvent } from "antd/es/checkbox";
 import { RangePickerProps } from "antd/es/date-picker";
 import Title from "antd/es/typography/Title";
-import { Dayjs } from "dayjs";
-import { useState } from "react";
-import { DAYS_OF_WEEK } from "../util/days-of-week";
+import { useContext, useState } from "react";
+import { FluxContext } from "../context/flux-context";
+import { LayerContext } from "../context/layer-context";
+import { DAYS_OF_WEEK_LABELS } from "../util/days-of-week";
 
-type FluxFilterProps = {
-  showFlux: boolean;
-  setShowFlux: (showFlux: boolean) => void;
-  startDate: Dayjs;
-  setStartDate: (date: Dayjs) => void;
-  endDate: Dayjs;
-  setEndDate: (date: Dayjs) => void;
-  startTime: Dayjs;
-  setStartTime: (date: Dayjs) => void;
-  endTime: Dayjs;
-  setEndTime: (date: Dayjs) => void;
-  daysOfWeek: string[];
-  setDaysOfWeek: (days: string[]) => void;
-};
+export const Sidebar = () => {
+  const { showFlux, setShowFlux, showBikeLanes, setShowBikeLanes } =
+    useContext(LayerContext);
 
-type BikeLaneLayerProps = {
-  showBikeLanes: boolean;
-  setShowBikeLanes: (show: boolean) => void;
-};
+  const {
+    startDate,
+    setStartDate,
+    endDate,
+    setEndDate,
+    startTime,
+    setStartTime,
+    endTime,
+    setEndTime,
+    daysOfWeek,
+    setDaysOfWeek,
+  } = useContext(FluxContext);
 
-type Props = FluxFilterProps & BikeLaneLayerProps;
-
-export const Sidebar = ({
-  showFlux,
-  setShowFlux,
-  startDate,
-  setStartDate,
-  endDate,
-  setEndDate,
-  startTime,
-  setStartTime,
-  endTime,
-  setEndTime,
-  daysOfWeek,
-  setDaysOfWeek,
-  showBikeLanes,
-  setShowBikeLanes,
-}: Props) => {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(true);
 
   const [isDayFilterDisabled, setIsDayFilterDisabled] = useState<boolean>(
     endDate.diff(startDate, "day") < 7
@@ -109,9 +89,10 @@ export const Sidebar = ({
       }
       setDaysOfWeek(newDaysOfWeek);
       setIsDayFilterDisabled(true);
+    } else {
+      setIsDayFilterDisabled(false);
     }
 
-    setIsDayFilterDisabled(false);
     setStartDate(start);
     setEndDate(end);
   };
@@ -161,7 +142,7 @@ export const Sidebar = ({
         <div className="flex flex-col">
           <Title level={5}>Day of week</Title>
           <div className="flex flex-row justify-between">
-            {DAYS_OF_WEEK.map((day) => (
+            {DAYS_OF_WEEK_LABELS.map((day) => (
               <span
                 key={`span-${day}`}
                 style={

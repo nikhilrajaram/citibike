@@ -1,28 +1,11 @@
-import { Dayjs } from "dayjs";
+import { useContext } from "react";
 import Map from "react-map-gl";
-import { FluxLayer } from "./flux-layer";
+import { LayerContext } from "../context/layer-context";
 import { BikeLaneLayer } from "./bike-lane-layer";
+import { FluxLayer } from "./flux-layer";
 
-type FluxFilter = {
-  startDate: Dayjs;
-  endDate: Dayjs;
-  startTime: Dayjs;
-  endTime: Dayjs;
-  daysOfWeek: string[];
-};
-
-type Props = {
-  showFlux: boolean;
-  fluxFilter: FluxFilter;
-
-  showBikeLanes: boolean;
-};
-
-export const BikeMap = ({
-  showFlux,
-  showBikeLanes,
-  fluxFilter: { startDate, endDate, startTime, endTime, daysOfWeek },
-}: Props) => {
+export const BikeMap = () => {
+  const { showFlux, showBikeLanes } = useContext(LayerContext);
   return (
     <Map
       mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN}
@@ -34,16 +17,8 @@ export const BikeMap = ({
       style={{ width: "100vw", height: "100vh" }}
       mapStyle="mapbox://styles/mapbox/light-v11"
     >
-      {showFlux && (
-        <FluxLayer
-          startDate={startDate}
-          endDate={endDate}
-          startTime={startTime}
-          endTime={endTime}
-          daysOfWeek={daysOfWeek}
-        ></FluxLayer>
-      )}
-      {showBikeLanes && <BikeLaneLayer/>}
+      {showFlux && <FluxLayer />}
+      {showBikeLanes && <BikeLaneLayer />}
     </Map>
   );
 };
