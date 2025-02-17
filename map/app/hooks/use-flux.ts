@@ -1,5 +1,6 @@
+import { useQuery } from "@tanstack/react-query";
 import { Dayjs } from "dayjs";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { DAYS_OF_WEEK_LABELS } from "../util/days-of-week";
 
 export type FluxPoint = {
@@ -12,26 +13,21 @@ export type FluxPoint = {
   outbound: number;
 };
 
-export const useFlux = (
-  {
-    startDate,
-    endDate,
-    startTime,
-    endTime,
-    daysOfWeek,
-  }: {
-    startDate: Dayjs;
-    endDate: Dayjs;
-    startTime: Dayjs;
-    endTime: Dayjs;
-    daysOfWeek: string[];
-  },
-  {
-    onData,
-  }: {
-    onData: (data: FluxPoint[]) => void;
-  }
-) => {
+export const useFlux = ({
+  startDate,
+  endDate,
+  startTime,
+  endTime,
+  daysOfWeek,
+}: {
+  startDate: Dayjs;
+  endDate: Dayjs;
+  startTime: Dayjs;
+  endTime: Dayjs;
+  daysOfWeek: string[];
+}) => {
+  const abortControllerRef = useRef<AbortController | null>(null);
+
   const formatParams = () => {
     return {
       startDate: startDate.format("YYYYMMDD"),
@@ -44,79 +40,51 @@ export const useFlux = (
     };
   };
 
-  const fetchData = async ({
-    abortController,
-  }: {
-    abortController?: AbortController;
-  } = {}) => {
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  });
+
+  const { isPending, data: flux } = useQuery({
+    queryKey: [
+      "flux",
+      startDate.format("YYYYMMDD"),
+      endDate.format("YYYYMMDD"),
+      startTime.format("HHmmss"),
+      endTime.format("HHmmss"),
+      daysOfWeek.sort().join(","),
+    ],
+    queryFn: () => {
+      return fetchData();
+    },
+    // cache data for 5 minutes
+    staleTime: 1000 * 60 * 10,
+  });
+
+  const fetchData = async () => {
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
     const queryParams = new URLSearchParams(formatParams());
     try {
       const response = await fetch(
         `${
           process.env.NEXT_PUBLIC_MAPSERVER_URL
         }/flux?${queryParams.toString()}`,
-        { signal: abortController?.signal }
+        { signal: controller.signal }
       );
-      const reader = response.body?.getReader();
-      if (!reader) {
-        return;
-      }
-      const decoder = new TextDecoder("utf-8");
 
-      let buffer = "";
-      const data: FluxPoint[] = [];
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value, { stream: true });
-        buffer += chunk;
-
-        const lines = chunk.split("\n");
-
-        for (const line of lines) {
-          if (line.trim()) {
-            try {
-              const {
-                stationId,
-                currentStationId,
-                stationName,
-                latitude,
-                longitude,
-                inbound,
-                outbound,
-              } = JSON.parse(line);
-              const fluxPoint = {
-                stationId,
-                currentStationId,
-                stationName,
-                latitude,
-                longitude,
-                inbound,
-                outbound,
-              };
-              data.push(fluxPoint);
-            } catch (_e) {
-              buffer = line;
-            }
-          }
-        }
-      }
-      onData(data);
+      const data = await response.json();
+      return data as FluxPoint[];
     } catch (e) {
       if ((e as Error)?.name !== "AbortError") {
         console.error(e);
       }
-      onData([]);
+      return [];
     }
   };
 
-  useEffect(() => {
-    const controller = new AbortController();
-    fetchData({ abortController: controller });
-
-    return () => {
-      controller.abort();
-    };
-  }, [JSON.stringify(formatParams())]);
+  return { isPending, flux };
 };

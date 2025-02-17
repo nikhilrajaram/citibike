@@ -1,17 +1,15 @@
 import { Typography } from "antd";
 import Title from "antd/es/typography/Title";
 import * as d3 from "d3";
-import { useContext, useState } from "react";
+import { useContext } from "react";
 import { Marker } from "react-map-gl";
 import { FluxContext } from "../context/flux-context";
-import { FluxPoint, useFlux } from "../hooks/use-flux";
+import { useFlux } from "../hooks/use-flux";
 import { clamp } from "../util/clamp";
 import { DAYS_OF_WEEK_LABELS } from "../util/days-of-week";
 import { daysOfWeekBetween } from "../util/days-of-week-between";
 
 export const FluxLayer = () => {
-  const [flux, setFlux] = useState<FluxPoint[]>([]);
-
   const { startDate, endDate, startTime, endTime, daysOfWeek } =
     useContext(FluxContext);
 
@@ -30,21 +28,28 @@ export const FluxLayer = () => {
   const hoursInSelection =
     (normalizedEndTime.diff(normalizedStartTime, "hour", true) + 24) % 24;
 
-  const onFluxStreamEnd = (data: FluxPoint[]) => {
-    setFlux(
-      data.map((d) => ({
-        ...d,
-        // normalize to hourly averages
-        inbound: Math.round((d.inbound / daysInSelection) * hoursInSelection),
-        outbound: Math.round((d.outbound / daysInSelection) * hoursInSelection),
-      }))
-    );
-  };
+  const { isPending, flux: fluxRaw } = useFlux({
+    startDate,
+    endDate,
+    startTime,
+    endTime,
+    daysOfWeek,
+  });
 
-  useFlux(
-    { startDate, endDate, startTime, endTime, daysOfWeek },
-    { onData: onFluxStreamEnd }
-  );
+  if (isPending) {
+    return null;
+  }
+
+  const flux = fluxRaw?.map((fluxPoint) => ({
+    ...fluxPoint,
+    // normalize to hourly averages
+    inbound: Math.round(
+      (fluxPoint.inbound / daysInSelection) * hoursInSelection
+    ),
+    outbound: Math.round(
+      (fluxPoint.outbound / daysInSelection) * hoursInSelection
+    ),
+  }));
 
   if (!flux || !flux.length) {
     return null;

@@ -1,9 +1,20 @@
 import { useQuery } from "@tanstack/react-query";
+import { useEffect, useRef } from "react";
 import { Layer, Source } from "react-map-gl";
 
 const BIKE_LANES_URL = process.env.NEXT_PUBLIC_BIKE_LANE_GEOJSON_URL;
 
 export const BikeLaneLayer = () => {
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  });
+
   const { isPending, data } = useQuery({
     queryKey: ["bike-lanes"],
     queryFn: () => {
@@ -12,6 +23,7 @@ export const BikeLaneLayer = () => {
       }
 
       const controller = new AbortController();
+      abortControllerRef.current = controller;
 
       return fetch(BIKE_LANES_URL, {
         signal: controller.signal,
