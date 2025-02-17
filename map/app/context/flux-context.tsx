@@ -1,6 +1,6 @@
 import dayjs, { Dayjs } from "dayjs";
 import { createContext, useState } from "react";
-import { DAYS_OF_WEEK } from "../util/days-of-week";
+import { DAYS_OF_WEEK_LABELS } from "../util/days-of-week";
 
 type FluxFilter = {
   startDate: Dayjs;
@@ -31,7 +31,7 @@ const initialEndTime = dayjs(
   `${today.format("YYYY-MM-DD")} 10:00:00`,
   "HH:mm:ss"
 );
-const initialDaysOfWeek = DAYS_OF_WEEK.slice(0, 5);
+const initialDaysOfWeek = DAYS_OF_WEEK_LABELS.slice(0, 5);
 
 export const FluxContext = createContext<FluxContextType>({
   startDate: initialStartDate,

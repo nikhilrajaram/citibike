@@ -14,7 +14,7 @@ import Title from "antd/es/typography/Title";
 import { useContext, useState } from "react";
 import { FluxContext } from "../context/flux-context";
 import { LayerContext } from "../context/layer-context";
-import { DAYS_OF_WEEK } from "../util/days-of-week";
+import { DAYS_OF_WEEK_LABELS } from "../util/days-of-week";
 
 export const Sidebar = () => {
   const { showFlux, setShowFlux, showBikeLanes, setShowBikeLanes } =
@@ -142,7 +142,7 @@ export const Sidebar = () => {
         <div className="flex flex-col">
           <Title level={5}>Day of week</Title>
           <div className="flex flex-row justify-between">
-            {DAYS_OF_WEEK.map((day) => (
+            {DAYS_OF_WEEK_LABELS.map((day) => (
               <span
                 key={`span-${day}`}
                 style={

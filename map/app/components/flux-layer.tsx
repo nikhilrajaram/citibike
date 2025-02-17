@@ -5,6 +5,9 @@ import { useContext, useState } from "react";
 import { Marker } from "react-map-gl";
 import { FluxContext } from "../context/flux-context";
 import { FluxPoint, useFlux } from "../hooks/use-flux";
+import { clamp } from "../util/clamp";
+import { DAYS_OF_WEEK_LABELS } from "../util/days-of-week";
+import { daysOfWeekBetween } from "../util/days-of-week-between";
 
 export const FluxLayer = () => {
   const [flux, setFlux] = useState<FluxPoint[]>([]);
@@ -12,15 +15,28 @@ export const FluxLayer = () => {
   const { startDate, endDate, startTime, endTime, daysOfWeek } =
     useContext(FluxContext);
 
-  const daysBetweenInclusive = endDate.diff(startDate, "day") + 1;
+  const daysInSelection = daysOfWeekBetween(
+    startDate,
+    endDate,
+    daysOfWeek.map(
+      (d) =>
+        // convert to sunday start
+        (DAYS_OF_WEEK_LABELS.indexOf(d) + 1) % 7
+    )
+  );
+
+  const normalizedStartTime = startTime.set("date", 0);
+  const normalizedEndTime = endTime.set("date", 0);
+  const hoursInSelection =
+    (normalizedEndTime.diff(normalizedStartTime, "hour", true) + 24) % 24;
 
   const onFluxStreamEnd = (data: FluxPoint[]) => {
     setFlux(
       data.map((d) => ({
         ...d,
-        // normalize to daily averages
-        inbound: d.inbound / daysBetweenInclusive,
-        outbound: d.outbound / daysBetweenInclusive,
+        // normalize to hourly averages
+        inbound: Math.round((d.inbound / daysInSelection) * hoursInSelection),
+        outbound: Math.round((d.outbound / daysInSelection) * hoursInSelection),
       }))
     );
   };
@@ -30,46 +46,64 @@ export const FluxLayer = () => {
     { onData: onFluxStreamEnd }
   );
 
-  const fluxes = flux.map((f) => Math.round(f.inbound - f.outbound));
-  const rides = flux.map((f) => Math.round(f.outbound + f.inbound));
-  const minFlux = Math.min(...fluxes);
-  const maxFlux = Math.max(...fluxes);
-  const maxRides = Math.max(...rides);
+  if (!flux || !flux.length) {
+    return null;
+  }
 
-  // todo: tune/configure this?
-  const fluxScaleBucketWidth = 20;
-  const fluxScaleBoundLow =
-    Math.floor(minFlux / fluxScaleBucketWidth) * fluxScaleBucketWidth;
-  const fluxScaleBoundHigh =
-    Math.ceil(maxFlux / fluxScaleBucketWidth) * fluxScaleBucketWidth;
-  const fluxScaleRange = fluxScaleBoundHigh - fluxScaleBoundLow;
-  const fluxScaleNBuckets = fluxScaleRange / fluxScaleBucketWidth;
+  const fluxes = flux.map((f) => f.inbound - f.outbound);
+  const rides = flux.map((f) => f.outbound + f.inbound);
+  const minFlux = d3.min(fluxes);
+  const maxFlux = d3.max(fluxes);
+  const maxRides = d3.max(rides);
 
-  /**
-   * Endpoints of the flux scale buckets
-   */
-  const fluxScaleBucketEndpoints = Array.from(
-    { length: fluxScaleNBuckets + 1 },
-    (_, i) => fluxScaleBoundLow + fluxScaleBucketWidth * i
-  );
+  if (
+    maxRides === undefined ||
+    minFlux === undefined ||
+    maxFlux === undefined ||
+    maxRides === 0 ||
+    (minFlux === 0 && maxFlux === 0)
+  ) {
+    // no information
+    // todo: show message
+    return null;
+  }
+
+  const absExtent = Math.max(Math.abs(minFlux), Math.abs(maxFlux));
+
+  // todo: better binning/color grading
+  // currently just uses a heuristic for binning with some hard-coded behavior
+  // relies on d3.ticks to produce "nice" bins
+  // uses a symmetric linear scale centered around zero for color grading
+  const nBins = clamp(Math.round((maxFlux - minFlux) / 5), 2, 5);
+  const ticks = d3.ticks(minFlux, maxFlux, nBins);
+  const bins = d3.bin().thresholds(ticks)(fluxes);
 
   /**
    * Used to color grade the station markers on the map based on net flux
    */
   const fluxColorScale = d3
-    .scaleDiverging<string>()
-    .domain([fluxScaleBoundLow, 0, fluxScaleBoundHigh])
+    .scaleLinear<string>()
+    .domain([-absExtent, 0, absExtent])
     .range(["red", "rgb(255, 237, 148)", "rgb(0, 209, 0)"]);
 
   /**
    * Returns the color value for a flux value
    */
   const colorGradeFlux = (flux: number) => {
+    // hard code yellow value
+    if (flux === 0) {
+      return "rgb(255, 237, 148)";
+    }
+    // clamp the value within the domain of the scale
+    const domain = fluxColorScale.domain();
+    const clampedFlux = clamp(flux, domain[0], domain[domain.length - 1]);
     const bucketValue =
-      // clamp to flux scale
-      flux > fluxScaleBucketEndpoints[fluxScaleBucketEndpoints.length - 1]
-        ? fluxScaleBoundHigh
-        : (fluxScaleBucketEndpoints.find((b) => flux < b) as number);
+      flux <= domain[0]
+        ? domain[0]
+        : (bins.find(
+            (b) =>
+              (b.x0 as number) < clampedFlux && clampedFlux <= (b.x1 as number)
+          )?.x0 as number);
     return fluxColorScale(bucketValue);
   };
 
@@ -87,8 +121,8 @@ export const FluxLayer = () => {
     }
 
     return flux.map((point) => {
-      const flux = Math.round(point.inbound - point.outbound);
-      const rides = Math.round(point.inbound + point.outbound);
+      const flux = point.inbound - point.outbound;
+      const rides = point.inbound + point.outbound;
       const fluxScaleValue = colorGradeFlux(flux);
       const rideScaleValue = rideMagnitudeScale(rides);
       return (
@@ -114,7 +148,7 @@ export const FluxLayer = () => {
   const FluxLegend = () => {
     if (
       !fluxColorScale ||
-      !fluxScaleBucketEndpoints ||
+      !bins ||
       !Number.isFinite(minFlux) ||
       !Number.isFinite(maxFlux)
     ) {
@@ -124,11 +158,22 @@ export const FluxLayer = () => {
     return (
       <div className="fixed top-4 right-4 p-4 bg-white bg-opacity-75 rounded shadow-lg z-10">
         <div className="flex flex-col items-end justify-between transition-all duration-500">
-          <Title level={5}>Net Daily Flux</Title>
-          {Array.from({ length: fluxScaleNBuckets }, (_, i) => i).map((i) => {
+          <Title level={5}>Net Hourly Flux</Title>
+          {bins.map((bin, i) => {
             // get bucket endpoints
-            const left = fluxScaleBucketEndpoints[i];
-            const right = fluxScaleBucketEndpoints[i + 1];
+            const left = bin.x0 as number;
+            const right = bin.x1 as number;
+            const colorValue =
+              i === 0
+                ? -absExtent
+                : i === bins.length - 1
+                ? absExtent
+                : left < 0 && 0 < right
+                ? 0
+                : Math.round((left + right) / 2);
+
+            const absLeft = Math.abs(left);
+            const absRight = Math.abs(right);
             return (
               <div
                 className="w-full items-center flex flex-row justify-between"
@@ -136,7 +181,7 @@ export const FluxLayer = () => {
               >
                 <div
                   style={{
-                    backgroundColor: fluxColorScale(left),
+                    backgroundColor: colorGradeFlux(colorValue),
                     width: "15px",
                     height: "15px",
                     borderRadius: "50%",
@@ -147,16 +192,17 @@ export const FluxLayer = () => {
                 <div>
                   {i === 0 ? (
                     <Typography.Text>
-                      More than {Math.abs(left)} outbound
+                      {`> ${Math.abs(right)} departing`}
                     </Typography.Text>
-                  ) : i === fluxScaleNBuckets - 1 ? (
+                  ) : i === bins.length - 1 ? (
                     <Typography.Text>
-                      More than {Math.abs(left)} inbound
+                      {`> ${Math.abs(left)} arriving`}
                     </Typography.Text>
                   ) : (
                     <Typography.Text>
-                      {Math.abs(right)} - {Math.abs(left)}{" "}
-                      {left > 0 ? "inbound" : "outbound"}
+                      {Math.min(absLeft, absRight)} -{" "}
+                      {Math.max(absLeft, absRight)}{" "}
+                      {colorValue > 0 ? "arriving" : "departing"}
                     </Typography.Text>
                   )}
                 </div>
