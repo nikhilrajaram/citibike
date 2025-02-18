@@ -92,14 +92,37 @@ export const queryFlux = async (query: FluxQuery, res: express.Response) => {
       outbound: string;
     }>();
 
-    res.json(
-      json.map(({ stationId, inbound, outbound }) => ({
-        ...stationsById[stationId],
-        stationId,
-        inbound: Number.parseInt(inbound),
-        outbound: Number.parseInt(outbound),
-      }))
-    );
+    const geoJson = {
+      type: "FeatureCollection",
+      features: json.map(
+        ({ stationId, inbound: inboundStr, outbound: outboundStr }) => {
+          const station = stationsById[stationId];
+          const inbound = Number.parseInt(inboundStr);
+          const outbound = Number.parseInt(outboundStr);
+          const flux = inbound - outbound;
+          const rides = inbound + outbound;
+
+          return {
+            type: "Feature",
+            geometry: {
+              type: "Point",
+              coordinates: [station.longitude, station.latitude],
+            },
+            properties: {
+              stationId,
+              currentStationId: station.currentStationId,
+              stationName: station.stationName,
+              inbound,
+              outbound,
+              flux,
+              rides,
+            },
+          };
+        }
+      ),
+    };
+
+    res.json(geoJson);
   } catch {
     res.json([]);
   }
