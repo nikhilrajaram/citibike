@@ -49,8 +49,6 @@ class ArchiveTransformer:
         self.archive_dir = os.path.join(out_dir, "archives")
         self.extracted_dir = os.path.join(out_dir, "extracted")
 
-        self.executor = None
-
         self.trips_df = None
 
         # instantiating the distributed client to make Dask use the distributed scheduler
