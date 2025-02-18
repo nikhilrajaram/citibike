@@ -2,30 +2,22 @@ import { Typography } from "antd";
 import Title from "antd/es/typography/Title";
 import * as d3 from "d3";
 import { useContext } from "react";
-import { Marker } from "react-map-gl";
+import { Layer, Source } from "react-map-gl";
 import { FluxContext } from "../context/flux-context";
 import { useFlux } from "../hooks/use-flux";
 import { clamp } from "../util/clamp";
-import { DAYS_OF_WEEK_LABELS } from "../util/days-of-week";
-import { daysOfWeekBetween } from "../util/days-of-week-between";
 
 export const FluxLayer = () => {
   const { startDate, endDate, startTime, endTime, daysOfWeek } =
     useContext(FluxContext);
 
-  const daysInSelection = daysOfWeekBetween(
-    startDate,
-    endDate,
-    daysOfWeek.map(
-      (d) =>
-        // convert to sunday start
-        (DAYS_OF_WEEK_LABELS.indexOf(d) + 1) % 7
-    )
-  );
-
-  const hoursInSelection = (endTime.diff(startTime, "hour", true) + 24) % 24;
-
-  const { isPending, flux: fluxRaw } = useFlux({
+  const {
+    isPending,
+    fluxCollection: fluxCollection,
+    minFlux,
+    maxFlux,
+    maxRides,
+  } = useFlux({
     startDate,
     endDate,
     startTime,
@@ -33,30 +25,11 @@ export const FluxLayer = () => {
     daysOfWeek,
   });
 
-  if (isPending) {
+  if (isPending || !fluxCollection) {
     return null;
   }
 
-  const flux = fluxRaw?.map((fluxPoint) => ({
-    ...fluxPoint,
-    // normalize to hourly averages
-    inbound: Math.round(
-      (fluxPoint.inbound / daysInSelection) * hoursInSelection
-    ),
-    outbound: Math.round(
-      (fluxPoint.outbound / daysInSelection) * hoursInSelection
-    ),
-  }));
-
-  if (!flux || !flux.length) {
-    return null;
-  }
-
-  const fluxes = flux.map((f) => f.inbound - f.outbound);
-  const rides = flux.map((f) => f.outbound + f.inbound);
-  const minFlux = d3.min(fluxes);
-  const maxFlux = d3.max(fluxes);
-  const maxRides = d3.max(rides);
+  const fluxes = fluxCollection.features.map((f) => f.properties.flux);
 
   if (
     maxRides === undefined ||
@@ -115,50 +88,13 @@ export const FluxLayer = () => {
     return fluxColorScale(bucketValue);
   };
 
-  /**
-   * Used to size the station markers on the map based on total rides
-   */
-  const rideMagnitudeScale = d3
-    .scaleLinear()
-    .domain([0, Math.abs(maxRides)])
-    .range([0, 1]);
-
-  const FluxPoints = () => {
-    if (!flux || !fluxColorScale || !rideMagnitudeScale) {
-      return null;
-    }
-
-    return flux.map((point) => {
-      const flux = point.inbound - point.outbound;
-      const rides = point.inbound + point.outbound;
-      const fluxScaleValue = colorGradeFlux(flux);
-      const rideScaleValue = rideMagnitudeScale(rides);
-      return (
-        <Marker
-          latitude={point.latitude}
-          longitude={point.longitude}
-          anchor="bottom"
-          key={`station-marker-${point.currentStationId}`}
-        >
-          <div
-            style={{
-              backgroundColor: fluxScaleValue,
-              width: `${10 * (rideScaleValue + 0.5)}px`,
-              height: `${10 * (rideScaleValue + 0.5)}px`,
-              borderRadius: "50%",
-            }}
-          />
-        </Marker>
-      );
-    });
-  };
-
   const FluxLegend = () => {
     if (
       !fluxColorScale ||
       !bins ||
       !Number.isFinite(minFlux) ||
-      !Number.isFinite(maxFlux)
+      !Number.isFinite(maxFlux) ||
+      minFlux === maxFlux
     ) {
       return null;
     }
@@ -166,7 +102,7 @@ export const FluxLayer = () => {
     return (
       <div className="fixed top-4 right-4 p-4 bg-white bg-opacity-75 rounded shadow-lg z-10">
         <div className="flex flex-col items-end justify-between transition-all duration-500">
-          <Title level={5}>Net Hourly Flux</Title>
+          <Title level={5}>Net Flux</Title>
           {bins.map((bin, i) => {
             // get bucket endpoints
             const left = bin.x0 as number;
@@ -192,11 +128,19 @@ export const FluxLayer = () => {
                 <div>
                   {i === 0 ? (
                     <Typography.Text>
-                      {`> ${Math.abs(right)} departing`}
+                      {`${
+                        right > 0
+                          ? `< ${absRight} arriving`
+                          : `> ${absRight} departing`
+                      }`}
                     </Typography.Text>
                   ) : i === bins.length - 1 ? (
                     <Typography.Text>
-                      {`> ${Math.abs(left)} arriving`}
+                      {`${
+                        left >= 0
+                          ? `> ${absLeft} arriving`
+                          : `< ${absLeft} departing`
+                      }`}
                     </Typography.Text>
                   ) : (
                     <Typography.Text>
@@ -216,7 +160,35 @@ export const FluxLayer = () => {
 
   return (
     <>
-      <FluxPoints />
+      <Source id="flux-data" type="geojson" data={fluxCollection}>
+        <Layer
+          id="flux-point-layer"
+          source="flux-data"
+          type="circle"
+          paint={{
+            "circle-color": [
+              "interpolate",
+              ["linear"],
+              ["get", "flux"],
+              -absExtent,
+              "red",
+              0,
+              "rgb(255, 237, 148)",
+              absExtent,
+              "rgb(0, 209, 0)",
+            ],
+            "circle-radius": [
+              "interpolate",
+              ["linear"],
+              ["get", "rides"],
+              0,
+              2,
+              maxRides,
+              10,
+            ],
+          }}
+        ></Layer>
+      </Source>
       <FluxLegend />
     </>
   );

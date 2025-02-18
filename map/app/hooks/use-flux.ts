@@ -2,15 +2,25 @@ import { useQuery } from "@tanstack/react-query";
 import { Dayjs } from "dayjs";
 import { useEffect, useRef } from "react";
 import { DAYS_OF_WEEK_LABELS } from "../util/days-of-week";
+import { daysOfWeekBetween } from "../util/days-of-week-between";
+import { useFluxViewportStats } from "./use-flux-viewport-stats";
 
-export type FluxPoint = {
+export type FluxProperties = {
   stationId: string;
   currentStationId: string;
   stationName: string;
-  latitude: number;
-  longitude: number;
   inbound: number;
   outbound: number;
+  flux: number;
+  rides: number;
+};
+
+type FluxFilter = {
+  startDate: Dayjs;
+  endDate: Dayjs;
+  startTime: Dayjs;
+  endTime: Dayjs;
+  daysOfWeek: string[];
 };
 
 export const useFlux = ({
@@ -19,13 +29,7 @@ export const useFlux = ({
   startTime,
   endTime,
   daysOfWeek,
-}: {
-  startDate: Dayjs;
-  endDate: Dayjs;
-  startTime: Dayjs;
-  endTime: Dayjs;
-  daysOfWeek: string[];
-}) => {
+}: FluxFilter) => {
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const formatParams = () => {
@@ -50,7 +54,7 @@ export const useFlux = ({
 
   const {
     isPending,
-    data: flux,
+    data: fluxCollection,
     refetch,
     error,
   } = useQuery({
@@ -78,14 +82,42 @@ export const useFlux = ({
       { signal: controller.signal }
     );
 
-    const data = await response.json();
-    return data as FluxPoint[];
+    const data = (await response.json()) as GeoJSON.FeatureCollection<
+      GeoJSON.Point,
+      FluxProperties
+    >;
+    const daysInSelection = daysOfWeekBetween(
+      startDate,
+      endDate,
+      daysOfWeek.map(
+        (d) =>
+          // convert to sunday start
+          (DAYS_OF_WEEK_LABELS.indexOf(d) + 1) % 7
+      )
+    );
+
+    return {
+      ...data,
+      features: data.features.map((f) => ({
+        ...f,
+        properties: {
+          ...f.properties,
+          // normalize to daily values
+          inbound: Math.round(f.properties.inbound / daysInSelection),
+          outbound: Math.round(f.properties.outbound / daysInSelection),
+          flux: Math.round(f.properties.flux / daysInSelection),
+          rides: Math.round(f.properties.rides / daysInSelection),
+        },
+      })),
+    };
   };
 
-  if (!isPending && !flux && error?.name === "AbortError") {
+  if (!isPending && !fluxCollection && error?.name === "AbortError") {
     // if the previous request was aborted, refetch
     refetch();
   }
 
-  return { isPending, flux };
+  const fluxViewportStats = useFluxViewportStats(fluxCollection);
+
+  return { isPending, fluxCollection, ...fluxViewportStats };
 };
