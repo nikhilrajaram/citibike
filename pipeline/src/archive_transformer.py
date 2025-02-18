@@ -3,7 +3,7 @@ import os
 import re
 import typing
 import zipfile
-from concurrent.futures import Future, ThreadPoolExecutor
+from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 
 import dask.dataframe as dd
 from dask.distributed import Client
@@ -48,6 +48,8 @@ class ArchiveTransformer:
         self.out_dir = out_dir
         self.archive_dir = os.path.join(out_dir, "archives")
         self.extracted_dir = os.path.join(out_dir, "extracted")
+
+        self.executor = None
 
         self.trips_df = None
 
@@ -112,34 +114,38 @@ class ArchiveTransformer:
 
     def extract_csvs(self):
         archive_paths = sorted(os.listdir(self.archive_dir))
+
+        archives_to_extract = [
+            os.path.join(self.archive_dir, file)
+            for file in archive_paths
+            if file.endswith(".zip")
+        ]
+
         with ThreadPoolExecutor(max_workers=8) as executor:
-            future_to_key: dict[Future, str] = {}
-            for file in archive_paths:
-                if not file.endswith(".zip"):
-                    log("Skipping non-archive file", {"file": file})
-                    continue
+            while archives_to_extract:
+                future_map: dict[Future, str] = {
+                    executor.submit(self.extract, archive_path): archive_path
+                    for archive_path in archives_to_extract
+                }
 
-                archive_path = os.path.join(self.archive_dir, file)
-                future_to_key[
-                    executor.submit(self.extract, archive_path, future_to_key, executor)
-                ] = archive_path
+                archives_to_extract.clear()
 
-        for future in future_to_key:
-            archive_path = future_to_key[future]
-            try:
-                future.result()
-                log(f"Extracted archive", {"archive": archive_path})
-            except Exception as e:
-                log(
-                    f"Failed to extract archive",
-                    {"archive": archive_path, "exception": e},
-                )
+                for future in as_completed(future_map):
+                    archive_path = future_map[future]
+                    try:
+                        log(f"Extracted archive", {"archive": archive_path})
+                        nested_archives = future.result()
+                        if nested_archives:
+                            archives_to_extract.extend(nested_archives)
+                    except Exception as e:
+                        log(
+                            f"Failed to extract archive",
+                            {"archive": archive_path, "exception": e},
+                        )
 
     def extract(
         self,
         archive_path: str,
-        future_to_key: typing.Optional[dict[Future, str]] = None,
-        executor: typing.Optional[ThreadPoolExecutor] = None,
     ):
         try:
             with open(archive_path, "rb") as f, zipfile.ZipFile(f) as zip_ref:
@@ -153,16 +159,16 @@ class ArchiveTransformer:
                 zip_ref.extractall(self.extracted_dir, members)
 
                 nested_zip_files = filter(lambda x: x.endswith(".zip"), members)
-                for nested_zip_file in nested_zip_files:
-                    nested_zip_path = os.path.join(self.extracted_dir, nested_zip_file)
-                    if future_to_key and executor:
-                        future_to_key[
-                            executor.submit(
-                                self.extract, nested_zip_path, future_to_key, executor
-                            )
-                        ] = nested_zip_path
-                    else:
-                        self.extract(nested_zip_path)
+                return (
+                    list(
+                        map(
+                            lambda x: os.path.join(self.extracted_dir, x),
+                            nested_zip_files,
+                        )
+                    )
+                    if nested_zip_files
+                    else None
+                )
         except zipfile.BadZipFile as e:
             log("Failed to extract archive", {"archive": archive_path, "exception": e})
 
@@ -171,7 +177,7 @@ class ArchiveTransformer:
         Gets the members in the archive to extract. Ignores non-data files and
         directories, skips over chunked files where the full file is present.
         """
-        extract_members = []
+        extract_members: typing.List[str] = []
         all_members = list(map(lambda x: x.filename, infolist))
         for zipinfo in infolist:
             if any(
