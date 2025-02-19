@@ -3,6 +3,7 @@ import Map from "react-map-gl";
 import { LayerContext } from "../context/layer-context";
 import { BikeLaneLayer } from "./bike-lane-layer";
 import { FluxLayer } from "./flux-layer";
+import { TransitLayer } from "./transit-layer";
 
 export const BikeMap = () => {
   const { showFlux, showBikeLanes } = useContext(LayerContext);
@@ -17,8 +18,9 @@ export const BikeMap = () => {
       style={{ width: "100vw", height: "100vh" }}
       mapStyle="mapbox://styles/mapbox/light-v11"
     >
-      {showFlux && <FluxLayer />}
+      <TransitLayer />
       {showBikeLanes && <BikeLaneLayer />}
+      {showFlux && <FluxLayer />}
     </Map>
   );
 };

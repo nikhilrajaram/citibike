@@ -186,6 +186,7 @@ export const FluxLayer = () => {
               maxRides,
               10,
             ],
+            "circle-opacity": 0.9,
           }}
         ></Layer>
       </Source>

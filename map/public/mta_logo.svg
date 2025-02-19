@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg style="enable-background:new 0 0 520 520" version="1.1" viewBox="-10 -10 520 520" xml:space="preserve" xmlns="http://www.w3.org/2000/svg">
+<title>MTA logo with outline</title>
+<defs>
+    <filter id="outline" x="-5%" y="-5%" width="110%" height="110%">
+        <feMorphology operator="dilate" radius="2" in="SourceAlpha" result="expanded"/>
+        <feFlood flood-color="#FFFFFF" result="white"/>
+        <feComposite in="white" in2="expanded" operator="in" result="white-outline"/>
+        <feComposite in="SourceGraphic" in2="white-outline" operator="over"/>
+    </filter>
+</defs>
+<style type="text/css">
+	.st0{fill:#0039A6;}
+	.st1{fill:#FFFFFF;}
+    .with-outline{filter:url(#outline);}
+</style>
+<g class="with-outline" transform="translate(35, 0)">
+    <!-- White portion of the circle -->
+    <path class="st1" d="M10 107C10 107 15 401 15 401 A250 250 0 0 1 10 107z"/>
+    <!-- Extended gap fill for M -->
+    <path class="st1" d="M13 395 L15 401 L44 396 L44 401 L13 401 Z"/>
+    <!-- Blue portion of the circle -->
+    <path class="st0" d="M10 107C55.2 42.4 130 0 215 0 353 0 465 112 465 250S353 500 215 500C133.6 500 61 461 16 400.8"/>
+    <path class="st1" d="m44 396s0-87.4-0.8-97.3c0-9.5-4.7-64.2-3.7-73.4l2.6 0.1 32.8 165 45.9-8.1 26.7-153h3c1.4 9.4-2.4 53.8-2.4 63.3-0.8 9.9-0.8 85-0.8 85l46.5-8.1v-230l-72.6-12.6-20.4 141c-0.7 0-20.6-148-20.6-148l-70.2-12.2 5.7 294"/>
+    <polygon class="st1" points="339 321 362 318 365 340 391 335 366 169 335 164 303 350 336 345"/>
+    <polygon class="st1" points="206 200 241 204 241 361 284 354 284 207 312 210 312 160 206 141"/>
+    <polygon class="st0" points="349 226 344 281 357 280 352 226"/>
+</g>
+</svg>

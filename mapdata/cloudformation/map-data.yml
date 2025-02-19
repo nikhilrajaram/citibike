@@ -21,7 +21,7 @@ Resources:
         OriginAccessControlOriginType: s3
         SigningBehavior: always
         SigningProtocol: sigv4
-    
+
   CORSHeadersPolicy:
     Type: AWS::CloudFront::ResponseHeadersPolicy
     Properties:
@@ -30,15 +30,15 @@ Resources:
         CorsConfig:
           AccessControlAllowCredentials: false
           AccessControlAllowHeaders:
-            Items: ['Content-Type', 'Accept', 'Accept-Encoding']
+            Items: ["Content-Type", "Accept", "Accept-Encoding"]
           AccessControlAllowMethods:
-            Items: ['GET', 'HEAD']
+            Items: ["GET", "HEAD"]
           AccessControlAllowOrigins:
-            Items: 
-              - 'http://localhost:3000'
+            Items:
+              - "http://localhost:3000"
               # todo: replace with prod domain
           AccessControlExposeHeaders:
-            Items: ['Content-Length', 'Content-Range']
+            Items: ["Content-Length", "Content-Range"]
           OriginOverride: false
 
   MapDataCloudFrontDistribution:
@@ -62,20 +62,23 @@ Resources:
 
   MapDataBucketCloudFrontReadPolicy:
     Type: AWS::S3::BucketPolicy
+    DependsOn:
+      - MapDataBucket
+      - MapDataCloudFrontDistribution
     Properties:
       Bucket: !Ref MapDataBucket
       PolicyDocument:
         Version: "2012-10-17"
         Statement:
-          Sid: AllowCloudFrontServicePrincipalReadOnly
-          Effect: Allow
-          Principal:
-            Service: "cloudfront.amazonaws.com"
-          Action: "s3:GetObject"
-          Resource: !Sub ${MapDataBucket.Arn}/*
-          Condition:
-            StringEquals:
-              AWS:SourceArn: !Sub arn:aws:cloudfront::${AWS::AccountId}:distribution/${MapDataCloudFrontDistribution.Id}
+          - Sid: AllowCloudFrontServicePrincipalReadOnly
+            Effect: Allow
+            Principal:
+              Service: "cloudfront.amazonaws.com"
+            Action: "s3:GetObject"
+            Resource: !Sub ${MapDataBucket.Arn}/*
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub arn:aws:cloudfront::${AWS::AccountId}:distribution/${MapDataCloudFrontDistribution.Id}
 
   LambdaExecutionRole:
     Type: AWS::IAM::Role
@@ -120,7 +123,7 @@ Resources:
       Handler: index.handler
       Runtime: nodejs22.x
       Timeout: 300
-      MemorySize: 512
+      MemorySize: 1024
       Code:
         S3Bucket: !ImportValue LambdaDeploymentBucketName
         S3Key: deployments/update-bike-lanes.zip
@@ -128,6 +131,7 @@ Resources:
         Variables:
           BUCKET_NAME: !Ref MapDataBucket
           BIKE_LANE_GEOJSON_URL: "https://data.cityofnewyork.us/api/geospatial/mzxg-pwib?accessType=DOWNLOAD&method=export&format=GeoJSON"
+          GTFS_URL: "https://rrgtfsfeeds.s3.amazonaws.com/gtfs_subway.zip"
       Role: !GetAtt LambdaExecutionRole.Arn
 
   ScheduleRule:
@@ -140,7 +144,8 @@ Resources:
           Id: UpdateBikeLanesTarget
           Input: |
             {
-              "bikeRoutes": true
+              "bikeRoutes": true,
+              "gtfs": true
             }
 
 Outputs:
