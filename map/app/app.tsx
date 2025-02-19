@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BikeMap } from "./components/bike-map";
 import { FluxProvider } from "./context/flux-context";
 import { LayerProvider } from "./context/layer-context";
-import { Sidebar } from "./sidebar/sidebar";
+import { Sidebar } from "./components/sidebar/sidebar";
 
 const queryClient = new QueryClient();
 

@@ -3,9 +3,9 @@ import Title from "antd/es/typography/Title";
 import * as d3 from "d3";
 import { useContext } from "react";
 import { Layer, Source } from "react-map-gl";
-import { FluxContext } from "../context/flux-context";
-import { useFlux } from "../hooks/use-flux";
-import { clamp } from "../util/clamp";
+import { FluxContext } from "../../context/flux-context";
+import { useFlux } from "../../hooks/use-flux";
+import { clamp } from "../../util/clamp";
 
 export const FluxLayer = () => {
   const { startDate, endDate, startTime, endTime, daysOfWeek } =

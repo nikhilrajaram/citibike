@@ -1,9 +1,9 @@
 import { useContext } from "react";
 import Map from "react-map-gl";
 import { LayerContext } from "../context/layer-context";
-import { BikeLaneLayer } from "./bike-lane-layer";
-import { FluxLayer } from "./flux-layer";
-import { TransitLayer } from "./transit-layer";
+import { BikeLaneLayer } from "./layers/bike-lane-layer";
+import { FluxLayer } from "./layers/flux-layer";
+import { TransitLayer } from "./layers/transit-layer";
 
 export const BikeMap = () => {
   const { showFlux, showTransit, showBikeLanes } = useContext(LayerContext);

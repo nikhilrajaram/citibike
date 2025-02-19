@@ -12,9 +12,9 @@ import { CheckboxChangeEvent } from "antd/es/checkbox";
 import { RangePickerProps } from "antd/es/date-picker";
 import Title from "antd/es/typography/Title";
 import { useContext, useState } from "react";
-import { FluxContext } from "../context/flux-context";
-import { LayerContext } from "../context/layer-context";
-import { DAYS_OF_WEEK_LABELS } from "../util/days-of-week";
+import { FluxContext } from "../../context/flux-context";
+import { LayerContext } from "../../context/layer-context";
+import { DAYS_OF_WEEK_LABELS } from "../../util/days-of-week";
 
 export const Sidebar = () => {
   const { showFlux, showTransit, setShowFlux, showBikeLanes, setShowTransit, setShowBikeLanes } =
