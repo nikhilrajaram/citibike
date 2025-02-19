@@ -13,6 +13,7 @@ type TransitPointProperties = {
 
 export const TransitLayer = () => {
   const map = useMap();
+  // add mta logo
   if (!map.current?.hasImage("mta_logo")) {
     const mtaLogoImage = new Image(100, 100);
     mtaLogoImage.src = "/mta_logo.svg";
@@ -71,24 +72,20 @@ export const TransitLayer = () => {
   });
 
   const [hoveredStation, setHoveredStation] = useState<{
-    properties:
-      | GeoJSON.Feature<GeoJSON.Point, TransitPointProperties>["properties"]
-      | null;
+    stopName: string;
     longitude: number;
     latitude: number;
   } | null>(null);
-  const [cursor, setCursor] = useState("default");
 
   const onMouseEnter = useCallback(
     (e: MapMouseEvent) => {
-      setCursor("pointer");
       const station = e.features?.[0] as GeoJSON.Feature<
         GeoJSON.Point,
         GeoJSON.GeoJsonProperties
       >;
       if (!hoveredStation && station) {
         setHoveredStation({
-          properties: station.properties as TransitPointProperties,
+          stopName: station.properties?.stop_name,
           longitude: station.geometry.coordinates[0],
           latitude: station.geometry.coordinates[1],
         });
@@ -98,7 +95,6 @@ export const TransitLayer = () => {
   );
 
   const onMouseLeave = useCallback((e: MapMouseEvent) => {
-    setCursor("default");
     setHoveredStation(null);
   }, []);
 
@@ -107,22 +103,13 @@ export const TransitLayer = () => {
       // Prevent click from propagating to the map
       e.originalEvent.stopPropagation();
 
-      const station = e.features[0];
       setHoveredStation({
-        properties: station.properties as TransitPointProperties,
+        stopName: e.features[0].properties?.stop_name,
         longitude: e.lngLat.lng,
         latitude: e.lngLat.lat,
       });
     }
   }, []);
-
-  useEffect(() => {
-    const currMap = map.current;
-    if (!currMap) {
-      return;
-    }
-    currMap.getCanvas().style.cursor = cursor;
-  }, [cursor, map]);
 
   useEffect(() => {
     const currMap = map.current;
@@ -188,7 +175,7 @@ export const TransitLayer = () => {
               color: "black",
             }}
           >
-            {hoveredStation.properties?.stop_name}
+            {hoveredStation.stopName}
           </div>
         </Marker>
       )}
