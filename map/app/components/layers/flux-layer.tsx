@@ -100,9 +100,14 @@ export const FluxLayer = () => {
     }
 
     return (
-      <div className="fixed top-4 right-4 p-4 bg-white bg-opacity-75 rounded shadow-lg z-10">
+      <div
+        className="fixed top-4 right-4 p-4 rounded shadow-lg z-1 backdrop-filter backdrop-blur-sm blur-border"
+        style={{ border: "1px solid #515050" }}
+      >
         <div className="flex flex-col items-end justify-between transition-all duration-500">
-          <Title level={5}>Net Flux</Title>
+          <Title className="!text-white" level={5}>
+            Net Flux
+          </Title>
           {bins.map((bin, i) => {
             // get bucket endpoints
             const left = bin.x0 as number;
@@ -127,7 +132,7 @@ export const FluxLayer = () => {
                 />
                 <div>
                   {i === 0 ? (
-                    <Typography.Text>
+                    <Typography.Text className="text-white">
                       {`${
                         right > 0
                           ? `< ${absRight} arriving`
@@ -135,7 +140,7 @@ export const FluxLayer = () => {
                       }`}
                     </Typography.Text>
                   ) : i === bins.length - 1 ? (
-                    <Typography.Text>
+                    <Typography.Text className="text-white">
                       {`${
                         left >= 0
                           ? `> ${absLeft} arriving`
@@ -143,7 +148,7 @@ export const FluxLayer = () => {
                       }`}
                     </Typography.Text>
                   ) : (
-                    <Typography.Text>
+                    <Typography.Text className="text-white">
                       {Math.min(absLeft, absRight)} -{" "}
                       {Math.max(absLeft, absRight)}{" "}
                       {left <= 0 && right <= 0 ? "departing" : "arriving"}
@@ -186,7 +191,6 @@ export const FluxLayer = () => {
               maxRides,
               10,
             ],
-            "circle-opacity": 0.9,
           }}
         ></Layer>
       </Source>

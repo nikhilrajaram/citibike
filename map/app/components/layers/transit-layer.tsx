@@ -1,6 +1,7 @@
 import { DefaultError, useQuery } from "@tanstack/react-query";
+import { Typography } from "antd";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Layer, MapMouseEvent, Marker, Source, useMap } from "react-map-gl";
+import { Layer, MapMouseEvent, Popup, Source, useMap } from "react-map-gl";
 
 const GTFS_STOPS_GEOJSON = process.env.NEXT_PUBLIC_GTFS_STOPS_GEOJSON_URL;
 
@@ -76,6 +77,7 @@ export const TransitLayer = () => {
     longitude: number;
     latitude: number;
   } | null>(null);
+  const [cursor, setCursor] = useState<"default" | "pointer">("default");
 
   const onMouseEnter = useCallback(
     (e: MapMouseEvent) => {
@@ -83,6 +85,7 @@ export const TransitLayer = () => {
         GeoJSON.Point,
         GeoJSON.GeoJsonProperties
       >;
+      setCursor("pointer");
       if (!hoveredStation && station) {
         setHoveredStation({
           stopName: station.properties?.stop_name,
@@ -94,7 +97,8 @@ export const TransitLayer = () => {
     [hoveredStation]
   );
 
-  const onMouseLeave = useCallback((e: MapMouseEvent) => {
+  const onMouseLeave = useCallback(() => {
+    setCursor("default");
     setHoveredStation(null);
   }, []);
 
@@ -127,6 +131,14 @@ export const TransitLayer = () => {
       currMap.off("click", "subway-stops-layer", onClick);
     };
   });
+
+  useEffect(() => {
+    const currMap = map.current;
+    if (!currMap) {
+      return;
+    }
+    currMap.getCanvas().style.cursor = cursor;
+  }, [cursor, map]);
 
   if (!GTFS_STOPS_GEOJSON) {
     console.warn("BIKE_LANES_URL is not set");
@@ -161,23 +173,18 @@ export const TransitLayer = () => {
         }}
       />
       {hoveredStation && (
-        <Marker
+        <Popup
           longitude={hoveredStation.longitude}
           latitude={hoveredStation.latitude}
-          offset={[0, -25]}
+          closeButton={false}
+          closeOnClick={false}
+          anchor="left"
+          className="blur-popup blur-border popup-no-tip"
         >
-          <div
-            style={{
-              backgroundColor: "white",
-              padding: "5px",
-              borderRadius: "5px",
-              pointerEvents: "none",
-              color: "black",
-            }}
-          >
+          <Typography className="text-white">
             {hoveredStation.stopName}
-          </div>
-        </Marker>
+          </Typography>
+        </Popup>
       )}
     </Source>
   );

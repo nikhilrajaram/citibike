@@ -16,7 +16,7 @@ export const BikeMap = () => {
         zoom: 11,
       }}
       style={{ width: "100vw", height: "100vh" }}
-      mapStyle="mapbox://styles/mapbox/light-v11"
+      mapStyle="mapbox://styles/mapbox/dark-v11"
     >
       {showTransit && <TransitLayer />}
       {showBikeLanes && <BikeLaneLayer />}
