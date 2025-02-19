@@ -6,7 +6,7 @@ import { FluxLayer } from "./flux-layer";
 import { TransitLayer } from "./transit-layer";
 
 export const BikeMap = () => {
-  const { showFlux, showBikeLanes } = useContext(LayerContext);
+  const { showFlux, showTransit, showBikeLanes } = useContext(LayerContext);
   return (
     <Map
       mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN}
@@ -18,7 +18,7 @@ export const BikeMap = () => {
       style={{ width: "100vw", height: "100vh" }}
       mapStyle="mapbox://styles/mapbox/light-v11"
     >
-      <TransitLayer />
+      {showTransit && <TransitLayer />}
       {showBikeLanes && <BikeLaneLayer />}
       {showFlux && <FluxLayer />}
     </Map>
