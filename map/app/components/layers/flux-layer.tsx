@@ -105,9 +105,7 @@ export const FluxLayer = () => {
         style={{ border: "1px solid #515050" }}
       >
         <div className="flex flex-col items-end justify-between transition-all duration-500">
-          <Title className="!text-white" level={5}>
-            Net Flux
-          </Title>
+          <Title level={5}>Net Flux</Title>
           {bins.map((bin, i) => {
             // get bucket endpoints
             const left = bin.x0 as number;
@@ -132,7 +130,7 @@ export const FluxLayer = () => {
                 />
                 <div>
                   {i === 0 ? (
-                    <Typography.Text className="text-white">
+                    <Typography.Text>
                       {`${
                         right > 0
                           ? `< ${absRight} arriving`
@@ -140,7 +138,7 @@ export const FluxLayer = () => {
                       }`}
                     </Typography.Text>
                   ) : i === bins.length - 1 ? (
-                    <Typography.Text className="text-white">
+                    <Typography.Text>
                       {`${
                         left >= 0
                           ? `> ${absLeft} arriving`
@@ -148,7 +146,7 @@ export const FluxLayer = () => {
                       }`}
                     </Typography.Text>
                   ) : (
-                    <Typography.Text className="text-white">
+                    <Typography.Text>
                       {Math.min(absLeft, absRight)} -{" "}
                       {Math.max(absLeft, absRight)}{" "}
                       {left <= 0 && right <= 0 ? "departing" : "arriving"}

@@ -1,5 +1,5 @@
 import * as d3 from "d3";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useMap } from "react-map-gl";
 import { debounce } from "../util/debounce";
 import { FluxProperties } from "./use-flux";

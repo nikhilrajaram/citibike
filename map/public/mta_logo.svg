@@ -2,7 +2,7 @@
 <svg style="enable-background:new 0 0 520 520" version="1.1" viewBox="-10 -10 520 520" xml:space="preserve" xmlns="http://www.w3.org/2000/svg">
 <title>MTA logo with outline</title>
 <defs>
-    <filter id="outline" x="-5%" y="-5%" width="110%" height="110%">
+    <filter id="outline">
         <feMorphology operator="dilate" radius="2" in="SourceAlpha" result="expanded"/>
         <feFlood flood-color="#FFFFFF" result="white"/>
         <feComposite in="white" in2="expanded" operator="in" result="white-outline"/>

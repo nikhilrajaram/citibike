@@ -81,6 +81,10 @@ export const TransitLayer = () => {
 
   const onMouseEnter = useCallback(
     (e: MapMouseEvent) => {
+      const shouldShowPopup = (map.current?.getZoom() || -Infinity) >= 12;
+      if (!shouldShowPopup) {
+        return;
+      }
       const station = e.features?.[0] as GeoJSON.Feature<
         GeoJSON.Point,
         GeoJSON.GeoJsonProperties
@@ -94,7 +98,7 @@ export const TransitLayer = () => {
         });
       }
     },
-    [hoveredStation]
+    [hoveredStation, map]
   );
 
   const onMouseLeave = useCallback(() => {
@@ -179,9 +183,10 @@ export const TransitLayer = () => {
           closeButton={false}
           closeOnClick={false}
           anchor="left"
+          offset={[10, 0]}
           className="blur-popup blur-border popup-no-tip"
         >
-          <Typography className="text-white">
+          <Typography>
             {hoveredStation.stopName}
           </Typography>
         </Popup>
