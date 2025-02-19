@@ -48,7 +48,7 @@ rm -rf "${DIST_DIR}"
 echo "deploying citibike stack"
 aws --profile $PROFILE \
   cloudformation deploy \
-  --template-file cloudformation/citibike.yml \
+  --template-file cloudformation/map-data.yml \
   --stack-name citibike \
   --capabilities CAPABILITY_IAM
 

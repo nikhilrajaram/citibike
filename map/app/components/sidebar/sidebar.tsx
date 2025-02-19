@@ -12,12 +12,12 @@ import { CheckboxChangeEvent } from "antd/es/checkbox";
 import { RangePickerProps } from "antd/es/date-picker";
 import Title from "antd/es/typography/Title";
 import { useContext, useState } from "react";
-import { FluxContext } from "../context/flux-context";
-import { LayerContext } from "../context/layer-context";
-import { DAYS_OF_WEEK_LABELS } from "../util/days-of-week";
+import { FluxContext } from "../../context/flux-context";
+import { LayerContext } from "../../context/layer-context";
+import { DAYS_OF_WEEK_LABELS } from "../../util/days-of-week";
 
 export const Sidebar = () => {
-  const { showFlux, setShowFlux, showBikeLanes, setShowBikeLanes } =
+  const { showFlux, showTransit, setShowFlux, showBikeLanes, setShowTransit, setShowBikeLanes } =
     useContext(LayerContext);
 
   const {
@@ -97,6 +97,10 @@ export const Sidebar = () => {
     setEndDate(end);
   };
 
+  const handleShowTransitChange = (e: CheckboxChangeEvent) => {
+    setShowTransit(e.target.checked);
+  };
+
   const handleShowBikeLaneChange = (e: CheckboxChangeEvent) => {
     setShowBikeLanes(e.target.checked);
   };
@@ -114,6 +118,9 @@ export const Sidebar = () => {
         <div className="flex flex-col">
           <Checkbox checked={showFlux} onChange={handleShowFluxChange}>
             Flux
+          </Checkbox>
+          <Checkbox checked={showTransit} onChange={handleShowTransitChange}>
+            Transit
           </Checkbox>
           <Checkbox checked={showBikeLanes} onChange={handleShowBikeLaneChange}>
             Bike lanes

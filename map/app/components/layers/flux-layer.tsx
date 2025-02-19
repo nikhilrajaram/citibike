@@ -3,9 +3,9 @@ import Title from "antd/es/typography/Title";
 import * as d3 from "d3";
 import { useContext } from "react";
 import { Layer, Source } from "react-map-gl";
-import { FluxContext } from "../context/flux-context";
-import { useFlux } from "../hooks/use-flux";
-import { clamp } from "../util/clamp";
+import { FluxContext } from "../../context/flux-context";
+import { useFlux } from "../../hooks/use-flux";
+import { clamp } from "../../util/clamp";
 
 export const FluxLayer = () => {
   const { startDate, endDate, startTime, endTime, daysOfWeek } =
@@ -100,7 +100,10 @@ export const FluxLayer = () => {
     }
 
     return (
-      <div className="fixed top-4 right-4 p-4 bg-white bg-opacity-75 rounded shadow-lg z-10">
+      <div
+        className="fixed top-4 right-4 p-4 rounded shadow-lg z-1 backdrop-filter backdrop-blur-sm blur-border"
+        style={{ border: "1px solid #515050" }}
+      >
         <div className="flex flex-col items-end justify-between transition-all duration-500">
           <Title level={5}>Net Flux</Title>
           {bins.map((bin, i) => {

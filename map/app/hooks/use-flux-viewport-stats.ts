@@ -1,5 +1,4 @@
 import * as d3 from "d3";
-import { GeoJSONFeature } from "mapbox-gl";
 import { useCallback, useEffect, useState } from "react";
 import { useMap } from "react-map-gl";
 import { debounce } from "../util/debounce";
@@ -19,38 +18,31 @@ export const useFluxViewportStats = (
     maxFlux: 0,
   });
 
-  const updateViewportStats = useCallback(
-    (
-      features:
-        | GeoJSON.Feature<GeoJSON.Point, FluxProperties>[]
-        | GeoJSONFeature[]
-    ) => {
-      if (features.length === 0) {
-        return;
-      }
-
-      const visibleFluxes = features.map((f) => f.properties?.flux as number);
-      const visibleRides = features.map((f) => f.properties?.rides as number);
-
-      setViewportStats({
-        maxRides: d3.max(visibleRides) || 0,
-        minFlux: d3.min(visibleFluxes) || 0,
-        maxFlux: d3.max(visibleFluxes) || 0,
+  const updateViewportStats = useCallback(() => {
+    const currMap = map.current;
+    let features: GeoJSON.Feature[] | undefined = flux?.features;
+    if (currMap?.getLayer("flux-point-layer")) {
+      features = currMap?.queryRenderedFeatures({
+        layers: ["flux-point-layer"],
       });
-    },
-    []
-  );
+    }
+    if (!features || features.length === 0) {
+      return;
+    }
+
+    const visibleFluxes = features.map((f) => f.properties?.flux as number);
+    const visibleRides = features.map((f) => f.properties?.rides as number);
+
+    setViewportStats({
+      maxRides: d3.max(visibleRides) || 0,
+      minFlux: d3.min(visibleFluxes) || 0,
+      maxFlux: d3.max(visibleFluxes) || 0,
+    });
+  }, [flux?.features, map]);
 
   // set initial stats
   useEffect(() => {
-    const currMap = map.current;
-    const features =
-      currMap?.queryRenderedFeatures({
-        layers: ["flux-point-layer"],
-      }) || flux?.features;
-    if (features) {
-      updateViewportStats(features);
-    }
+    updateViewportStats();
   }, [flux, map, updateViewportStats]);
 
   // update stats on viewport change
@@ -58,13 +50,7 @@ export const useFluxViewportStats = (
     const currMap = map.current;
 
     const debouncedUpdate = debounce(() => {
-      const features = currMap?.queryRenderedFeatures({
-        layers: ["flux-point-layer"],
-      });
-
-      if (features) {
-        updateViewportStats(features);
-      }
+      updateViewportStats();
     }, 10);
 
     currMap?.on("move", debouncedUpdate);
@@ -78,7 +64,7 @@ export const useFluxViewportStats = (
       currMap?.off("moveend", debouncedUpdate);
       currMap?.off("zoomend", debouncedUpdate);
     };
-  }, [map, updateViewportStats]);
+  }, [flux?.features, map, updateViewportStats]);
 
   return viewportStats;
 };
