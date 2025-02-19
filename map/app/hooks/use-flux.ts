@@ -71,16 +71,26 @@ export const useFlux = ({
     },
     // cache data for 5 minutes
     staleTime: 1000 * 60 * 10,
+    retry: 3,
   });
 
   const fetchData = async () => {
     const controller = new AbortController();
     abortControllerRef.current = controller;
-    const queryParams = new URLSearchParams(formatParams());
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_MAPSERVER_URL}/flux?${queryParams.toString()}`,
-      { signal: controller.signal }
-    );
+    const response = await fetch(`/api/flux`, {
+      method: "POST",
+      body: JSON.stringify({
+        startDate: startDate.format("YYYYMMDD"),
+        endDate: endDate.format("YYYYMMDD"),
+        startTime: startTime.format("HHmmss"),
+        endTime: endTime.format("HHmmss"),
+        daysOfWeek: daysOfWeek.map((d) => DAYS_OF_WEEK_LABELS.indexOf(d)),
+      }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+      signal: controller.signal,
+    });
 
     const data = (await response.json()) as GeoJSON.FeatureCollection<
       GeoJSON.Point,

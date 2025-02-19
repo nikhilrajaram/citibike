@@ -1,14 +1,13 @@
 import dayjs from "dayjs";
-import express from "express";
-import { getClient } from "../clickhouse-client";
-import { getStationsById } from "../stations/stations";
+import { getStationsById } from "./stations";
+import { getClient } from "./clickhouse-client";
 
 type FluxQuery = {
   startDate: string;
   endDate: string;
   startTime?: string;
   endTime?: string;
-  daysOfWeek?: string;
+  daysOfWeek?: string[];
 };
 
 const getDateCondition = (
@@ -44,14 +43,17 @@ const getDateCondition = (
   }
   if (daysOfWeek) {
     condition += `
-      AND toDayOfWeek(${field}, 1) IN (${daysOfWeek})
+      AND toDayOfWeek(${field}, 1) IN (${daysOfWeek.join(",")})
     `;
   }
 
   return condition;
 };
 
-export const queryFlux = async (query: FluxQuery, res: express.Response) => {
+export const queryFlux = async (
+  query: FluxQuery,
+  { abortSignal }: { abortSignal?: AbortSignal } = {}
+) => {
   const client = getClient();
 
   const stationsById = await getStationsById();
@@ -79,51 +81,47 @@ export const queryFlux = async (query: FluxQuery, res: express.Response) => {
       ON ot.station_id = it.station_id;
   `;
 
-  try {
-    const rows = await client.query({
-      query: fluxSql,
-      format: "JSONEachRow",
-      abort_signal: res.locals.abortController.signal,
-    });
-    const json = await rows.json<{
-      stationId: string;
-      // note: Clickhouse returns inbound/outbound as strings
-      inbound: string;
-      outbound: string;
-    }>();
+  const rows = await client.query({
+    query: fluxSql,
+    format: "JSONEachRow",
+    abort_signal: abortSignal,
+  });
+  const json = await rows.json<{
+    stationId: string;
+    // note: Clickhouse returns inbound/outbound as strings
+    inbound: string;
+    outbound: string;
+  }>();
 
-    const geoJson = {
-      type: "FeatureCollection",
-      features: json.map(
-        ({ stationId, inbound: inboundStr, outbound: outboundStr }) => {
-          const station = stationsById[stationId];
-          const inbound = Number.parseInt(inboundStr);
-          const outbound = Number.parseInt(outboundStr);
-          const flux = inbound - outbound;
-          const rides = inbound + outbound;
+  const geoJson = {
+    type: "FeatureCollection",
+    features: json.map(
+      ({ stationId, inbound: inboundStr, outbound: outboundStr }) => {
+        const station = stationsById[stationId];
+        const inbound = Number.parseInt(inboundStr);
+        const outbound = Number.parseInt(outboundStr);
+        const flux = inbound - outbound;
+        const rides = inbound + outbound;
 
-          return {
-            type: "Feature",
-            geometry: {
-              type: "Point",
-              coordinates: [station.longitude, station.latitude],
-            },
-            properties: {
-              stationId,
-              currentStationId: station.currentStationId,
-              stationName: station.stationName,
-              inbound,
-              outbound,
-              flux,
-              rides,
-            },
-          };
-        }
-      ),
-    };
+        return {
+          type: "Feature",
+          geometry: {
+            type: "Point",
+            coordinates: [station.longitude, station.latitude],
+          },
+          properties: {
+            stationId,
+            currentStationId: station.currentStationId,
+            stationName: station.stationName,
+            inbound,
+            outbound,
+            flux,
+            rides,
+          },
+        };
+      }
+    ),
+  };
 
-    res.json(geoJson);
-  } catch {
-    res.json([]);
-  }
+  return geoJson;
 };

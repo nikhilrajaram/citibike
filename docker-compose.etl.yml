@@ -25,11 +25,6 @@ services:
       pipeline:
         condition: service_completed_successfully
 
-  mapserver:
-    extends:
-      file: docker-compose.local.yml
-      service: mapserver
-
   map:
     extends:
       file: docker-compose.local.yml
