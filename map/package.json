@@ -24,7 +24,8 @@
     "next": "^15.1.2",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
-    "react-map-gl": "^7.1.7"
+    "react-map-gl": "^7.1.7",
+    "usehooks-ts": "^3.1.1"
   },
   "devDependencies": {
     "@types/d3": "^7.4.3",

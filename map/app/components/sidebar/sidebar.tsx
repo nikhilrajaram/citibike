@@ -1,6 +1,5 @@
 import { FluxContext } from "@/app/context/flux-context";
 import { LayerContext } from "@/app/context/layer-context";
-import { useWindowSize } from "@/app/hooks/use-window-size";
 import { DAYS_OF_WEEK_LABELS } from "@/app/util/days-of-week";
 import { RightOutlined, UpOutlined } from "@ant-design/icons";
 import {
@@ -16,6 +15,7 @@ import { CheckboxChangeEvent } from "antd/es/checkbox";
 import { RangePickerProps } from "antd/es/date-picker";
 import Title from "antd/es/typography/Title";
 import { useContext, useState } from "react";
+import { useWindowSize } from "usehooks-ts";
 
 export const Sidebar = () => {
   const {
@@ -114,35 +114,26 @@ export const Sidebar = () => {
     setShowBikeLanes(e.target.checked);
   };
 
-  const buttonStyle =
-    width > height
-      ? ({
-          height: "60px",
-          width: "30px",
-          position: "fixed",
-          left: 0,
-          top: "calc(25% - 30px)",
-          borderRadius: "0",
-          boxShadow: "2px 0 5px rgba(7, 7, 7, 0.1)",
-        } as const)
-      : ({
-          height: "30px",
-          width: "60px",
-          position: "fixed",
-          bottom: 0,
-          left: "calc(50% - 30px)",
-          borderRadius: "0",
-          boxShadow: "2px 0 5px rgba(13, 7, 7, 0.1)",
-        } as const);
+  const isHorizontallyOriented = !width || !height || width > height;
+
+  const buttonStyle = {
+    position: "fixed",
+    top: isHorizontallyOriented ? "calc(25% - 30px)" : undefined,
+    left: isHorizontallyOriented ? 0 : "calc(50% - 30px)",
+    height: isHorizontallyOriented ? "60px" : "30px",
+    width: isHorizontallyOriented ? "30px" : "60px",
+    borderRadius: "0",
+    boxShadow: "2px 0 5px rgba(7, 7, 7, 0.1)",
+  } as const;
 
   const drawerStyle = {
-    placement: width > height ? "left" : "bottom",
-    width: width > height ? 290 : undefined,
-    height: width > height ? undefined : 200,
+    placement: isHorizontallyOriented ? "left" : "bottom",
+    width: isHorizontallyOriented ? 290 : undefined,
+    height: isHorizontallyOriented ? undefined : 200,
     mask: false,
   } as const;
 
-  const icon = width > height ? <RightOutlined /> : <UpOutlined />;
+  const icon = isHorizontallyOriented ? <RightOutlined /> : <UpOutlined />;
 
   return open ? (
     <Drawer onClose={hideDrawer} open={open} {...drawerStyle}>

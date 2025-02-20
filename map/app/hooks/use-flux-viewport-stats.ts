@@ -1,9 +1,9 @@
 import { LAYERS } from "@/app/components/layers/layers";
 import { FluxProperties } from "@/app/hooks/use-flux";
-import { debounce } from "@/app/util/debounce";
 import * as d3 from "d3";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useMap } from "react-map-gl";
+import { useDebounceCallback } from "usehooks-ts";
 
 /**
  * Gets statistics for flux values in the current viewport
@@ -19,7 +19,7 @@ export const useFluxViewportStats = (
     maxFlux: 0,
   });
 
-  const updateViewportStats = useCallback(() => {
+  const updateViewportStats = useDebounceCallback(() => {
     const currMap = map.current;
     let features: GeoJSON.Feature[] | undefined = flux?.features;
     if (currMap?.getLayer(LAYERS.FLUX)) {
@@ -39,7 +39,7 @@ export const useFluxViewportStats = (
       minFlux: d3.min(visibleFluxes) || 0,
       maxFlux: d3.max(visibleFluxes) || 0,
     });
-  }, [flux?.features, map]);
+  }, 50);
 
   // set initial stats
   useEffect(() => {
@@ -50,20 +50,16 @@ export const useFluxViewportStats = (
   useEffect(() => {
     const currMap = map.current;
 
-    const debouncedUpdate = debounce(() => {
-      updateViewportStats();
-    }, 10);
-
-    currMap?.on("move", debouncedUpdate);
-    currMap?.on("zoom", debouncedUpdate);
-    currMap?.on("moveend", debouncedUpdate);
-    currMap?.on("zoomend", debouncedUpdate);
+    currMap?.on("move", updateViewportStats);
+    currMap?.on("zoom", updateViewportStats);
+    currMap?.on("moveend", updateViewportStats);
+    currMap?.on("zoomend", updateViewportStats);
 
     return () => {
-      currMap?.off("move", debouncedUpdate);
-      currMap?.off("zoom", debouncedUpdate);
-      currMap?.off("moveend", debouncedUpdate);
-      currMap?.off("zoomend", debouncedUpdate);
+      currMap?.off("move", updateViewportStats);
+      currMap?.off("zoom", updateViewportStats);
+      currMap?.off("moveend", updateViewportStats);
+      currMap?.off("zoomend", updateViewportStats);
     };
   }, [flux?.features, map, updateViewportStats]);
 
