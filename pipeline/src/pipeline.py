@@ -28,10 +28,6 @@ def parse_args():
         action="store_true",
         help="Upload data to S3",
     )
-    parser.add_argument(
-        "--bucket_name",
-        help="S3 bucket name",
-    )
     parser.add_argument("--out_dir", help="Output directory", default="./data")
     return parser.parse_args()
 
@@ -46,5 +42,8 @@ if __name__ == "__main__":
         transformer.transform_archives()
     if args.upload:
         pq_dir = os.path.join(args.out_dir, "parquet")
+        bucket_name = os.environ.get("BUCKET_NAME")
+        if not bucket_name:
+            raise ValueError("BUCKET_NAME environment variable is not set")
         uploader = Uploader(pq_dir, args.bucket_name)
         uploader.upload()

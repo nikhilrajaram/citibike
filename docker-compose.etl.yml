@@ -4,7 +4,7 @@ services:
     volumes:
       - ./pipeline/src:/app/src
       - ./data:/data
-    command: [ "python", "-u", "src/pipeline.py", "-e", "-t", "--out_dir=/data" ]
+    command: [ "python", "-u", "src/pipeline.py", "-e", "-t", "-u", "--out_dir=/data" ]
     environment:
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}

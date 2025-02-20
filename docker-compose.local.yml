@@ -19,6 +19,7 @@ services:
     networks:
       - citibike_network
 
+  # Redis services for mocking out vercel KV
   redis:
     image: redis
     ports:
