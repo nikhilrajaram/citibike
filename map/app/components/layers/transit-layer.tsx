@@ -2,6 +2,7 @@ import { DefaultError, useQuery } from "@tanstack/react-query";
 import { Typography } from "antd";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Layer, MapMouseEvent, Popup, Source, useMap } from "react-map-gl";
+import { LAYERS } from "./layers";
 
 const GTFS_STOPS_GEOJSON = process.env.NEXT_PUBLIC_GTFS_STOPS_GEOJSON_URL;
 
@@ -125,23 +126,23 @@ export const TransitLayer = () => {
       return;
     }
 
-    currMap.on("mouseenter", "subway-stops-layer", onMouseEnter);
-    currMap.on("mouseleave", "subway-stops-layer", onMouseLeave);
-    currMap.on("click", "subway-stops-layer", onClick);
+    currMap.on("mouseenter", LAYERS.SUBWAY_STOPS, onMouseEnter);
+    currMap.on("mouseleave", LAYERS.SUBWAY_STOPS, onMouseLeave);
+    currMap.on("click", LAYERS.SUBWAY_STOPS, onClick);
 
     return () => {
-      currMap.off("mouseenter", "subway-stops-layer", onMouseEnter);
-      currMap.off("mouseleave", "subway-stops-layer", onMouseLeave);
-      currMap.off("click", "subway-stops-layer", onClick);
+      currMap.off("mouseenter", LAYERS.SUBWAY_STOPS, onMouseEnter);
+      currMap.off("mouseleave", LAYERS.SUBWAY_STOPS, onMouseLeave);
+      currMap.off("click", LAYERS.SUBWAY_STOPS, onClick);
     };
   });
 
   useEffect(() => {
-    const currMap = map.current;
-    if (!currMap) {
+    const canvas = map.current?.getCanvas();
+    if (!canvas?.style) {
       return;
     }
-    currMap.getCanvas().style.cursor = cursor;
+    canvas.style.cursor = cursor;
   }, [cursor, map]);
 
   if (!GTFS_STOPS_GEOJSON) {
@@ -156,7 +157,7 @@ export const TransitLayer = () => {
   return (
     <Source id="subway-stops" type="geojson" data={data}>
       <Layer
-        id="subway-stops-layer"
+        id={LAYERS.SUBWAY_STOPS}
         type="symbol"
         layout={{
           "icon-image": "mta_logo",
@@ -186,9 +187,7 @@ export const TransitLayer = () => {
           offset={[10, 0]}
           className="blur-popup blur-border popup-no-tip"
         >
-          <Typography>
-            {hoveredStation.stopName}
-          </Typography>
+          <Typography>{hoveredStation.stopName}</Typography>
         </Popup>
       )}
     </Source>

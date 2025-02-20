@@ -1,11 +1,14 @@
 import { Typography } from "antd";
 import Title from "antd/es/typography/Title";
 import * as d3 from "d3";
-import { useContext } from "react";
-import { Layer, Source } from "react-map-gl";
+import { useCallback, useContext, useEffect, useState } from "react";
+import { Layer, MapMouseEvent, Source, useMap } from "react-map-gl";
 import { FluxContext } from "../../context/flux-context";
-import { useFlux } from "../../hooks/use-flux";
+import { FluxProperties, useFlux } from "../../hooks/use-flux";
 import { clamp } from "../../util/clamp";
+import { BikeStationPopupContent } from "../popup/bike-station-popup-content";
+import { CloseablePopup } from "../popup/closeable-popup";
+import { LAYERS } from "./layers";
 
 export const FluxLayer = () => {
   const { startDate, endDate, startTime, endTime, daysOfWeek } =
@@ -24,6 +27,120 @@ export const FluxLayer = () => {
     endTime,
     daysOfWeek,
   });
+
+  const map = useMap();
+  const [hoveredStation, setHoveredStation] = useState<{
+    longitude: number;
+    latitude: number;
+    properties: FluxProperties;
+  } | null>(null);
+  const [pinnedStations, setPinnedStations] = useState<
+    {
+      longitude: number;
+      latitude: number;
+      properties: FluxProperties;
+    }[]
+  >([]);
+  const [cursor, setCursor] = useState<"default" | "pointer">("default");
+
+  const onMouseEnter = useCallback(
+    (e: MapMouseEvent) => {
+      const shouldShowPopup = (map.current?.getZoom() || -Infinity) >= 12;
+      if (!shouldShowPopup) {
+        return;
+      }
+      const station = e.features?.[0] as GeoJSON.Feature<
+        GeoJSON.Point,
+        GeoJSON.GeoJsonProperties
+      >;
+      // if the station is pinned, don't render a hover popup
+      if (
+        pinnedStations.find(
+          (s) => s.properties.stationId === station.properties?.stationId
+        )
+      ) {
+        return;
+      }
+      setCursor("pointer");
+      if (!hoveredStation && station) {
+        setHoveredStation({
+          longitude: station.geometry.coordinates[0],
+          latitude: station.geometry.coordinates[1],
+          properties: station.properties as FluxProperties,
+        });
+      }
+    },
+    [map, pinnedStations, hoveredStation]
+  );
+
+  const onMouseLeave = useCallback(() => {
+    setCursor("default");
+    setHoveredStation(null);
+  }, []);
+
+  const onClick = useCallback(
+    (e: MapMouseEvent) => {
+      if (e.features && e.features.length > 0) {
+        e.originalEvent.stopPropagation();
+        const station = e.features[0] as GeoJSON.Feature<
+          GeoJSON.Point,
+          GeoJSON.GeoJsonProperties
+        >;
+        const matchingPinnedStation = pinnedStations.find(
+          (s) => s.properties.stationId === station.properties?.stationId
+        );
+        if (matchingPinnedStation) {
+          // if the station is already pinned, unpin it
+          setHoveredStation(matchingPinnedStation);
+          setPinnedStations((prev) =>
+            prev.filter(
+              (s) => s.properties.stationId !== station.properties?.stationId
+            )
+          );
+        } else {
+          setPinnedStations((prev) => [
+            ...prev,
+            {
+              longitude: station.geometry.coordinates[0],
+              latitude: station.geometry.coordinates[1],
+              properties: station.properties as FluxProperties,
+            },
+          ]);
+          setHoveredStation(null);
+        }
+      }
+    },
+    [pinnedStations]
+  );
+
+  const removePinnedStation = (index: number) => {
+    setPinnedStations((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  useEffect(() => {
+    const currMap = map.current;
+    if (!currMap) {
+      return;
+    }
+
+    currMap.on("mouseenter", LAYERS.FLUX, onMouseEnter);
+    currMap.on("mouseleave", LAYERS.FLUX, onMouseLeave);
+    currMap.on("click", LAYERS.FLUX, onClick);
+
+    return () => {
+      currMap.off("mouseenter", LAYERS.FLUX, onMouseEnter);
+      currMap.off("mouseleave", LAYERS.FLUX, onMouseLeave);
+      currMap.off("click", LAYERS.FLUX, onClick);
+    };
+  }, [map, onMouseEnter, onMouseLeave, onClick]);
+
+  useEffect(() => {
+    const currMap = map.current;
+    if (!currMap) {
+      return;
+    }
+    currMap.getCanvas().style.cursor = cursor;
+  }, [cursor, map]);
 
   if (isPending || !fluxCollection) {
     return null;
@@ -105,7 +222,7 @@ export const FluxLayer = () => {
         style={{ border: "1px solid #515050" }}
       >
         <div className="flex flex-col items-end justify-between transition-all duration-500">
-          <Title level={5}>Net Flux</Title>
+          <Title level={5}>Net Flow</Title>
           {bins.map((bin, i) => {
             // get bucket endpoints
             const left = bin.x0 as number;
@@ -165,7 +282,7 @@ export const FluxLayer = () => {
     <>
       <Source id="flux-data" type="geojson" data={fluxCollection}>
         <Layer
-          id="flux-point-layer"
+          id={LAYERS.FLUX}
           source="flux-data"
           type="circle"
           paint={{
@@ -190,7 +307,33 @@ export const FluxLayer = () => {
               10,
             ],
           }}
-        ></Layer>
+        />
+        {hoveredStation && (
+          <CloseablePopup
+            longitude={hoveredStation.longitude}
+            latitude={hoveredStation.latitude}
+            showCloseButton={false}
+            closeButton={false}
+            closeOnClick={false}
+            anchor="left"
+            offset={[10, 0]}
+          >
+            <BikeStationPopupContent {...hoveredStation.properties} />
+          </CloseablePopup>
+        )}
+        {pinnedStations.map((station, i) => (
+          <CloseablePopup
+            key={`pinned-station-${i}`}
+            longitude={station.longitude}
+            latitude={station.latitude}
+            anchor="left"
+            offset={[10, 0]}
+            showCloseButton
+            onClose={() => removePinnedStation(i)}
+          >
+            <BikeStationPopupContent {...station.properties} />
+          </CloseablePopup>
+        ))}
       </Source>
       <FluxLegend />
     </>
