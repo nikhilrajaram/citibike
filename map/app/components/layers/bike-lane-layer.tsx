@@ -1,8 +1,8 @@
+import { emptyFeatureCollection } from "@/app/util/empty-geojson";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { Layer, Source } from "react-map-gl";
 import { LAYERS } from "./layers";
-
 
 const BIKE_LANES_URL = process.env.NEXT_PUBLIC_BIKE_LANE_GEOJSON_URL;
 
@@ -52,17 +52,15 @@ export const BikeLaneLayer = () => {
     staleTime: Number.POSITIVE_INFINITY,
   });
 
-  if (!BIKE_LANES_URL) {
-    console.warn("BIKE_LANES_URL is not set");
-    return null;
-  }
-
-  if (isPending) {
-    return null;
-  }
-
   return (
-    <Source id="bike-lanes" type="geojson" data={data}>
+    <Source
+      id="bike-lanes"
+      type="geojson"
+      // haven't been able to get the slots working so just defaulting to an empty
+      // feature collection to ensure that the layers are added in the order rendered
+      // in bike-map.tsx
+      data={(!isPending && data) ? data : emptyFeatureCollection}
+    >
       <Layer
         id={LAYERS.BIKE}
         type="line"

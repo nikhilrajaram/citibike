@@ -1,3 +1,4 @@
+import { emptyFeatureCollection } from "@/app/util/empty-geojson";
 import { DefaultError, useQuery } from "@tanstack/react-query";
 import { Typography } from "antd";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -145,17 +146,15 @@ export const TransitLayer = () => {
     canvas.style.cursor = cursor;
   }, [cursor, map]);
 
-  if (!GTFS_STOPS_GEOJSON) {
-    console.warn("BIKE_LANES_URL is not set");
-    return null;
-  }
-
-  if (isPending || !data) {
-    return null;
-  }
-
   return (
-    <Source id="subway-stops" type="geojson" data={data}>
+    <Source
+      id="subway-stops"
+      type="geojson"
+      // haven't been able to get the slots working so just defaulting to an empty
+      // feature collection to ensure that the layers are added in the order rendered
+      // in bike-map.tsx
+      data={(!isPending && data) ? data : emptyFeatureCollection}
+    >
       <Layer
         id={LAYERS.SUBWAY_STOPS}
         type="symbol"
@@ -185,7 +184,7 @@ export const TransitLayer = () => {
           closeOnClick={false}
           anchor="left"
           offset={[10, 0]}
-          className="blur-popup blur-border popup-no-tip"
+          className="blur-popup blur-border popup-no-tip z-1"
         >
           <Typography>{hoveredStation.stopName}</Typography>
         </Popup>
