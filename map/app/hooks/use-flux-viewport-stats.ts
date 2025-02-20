@@ -1,6 +1,7 @@
 import * as d3 from "d3";
 import { useCallback, useEffect, useState } from "react";
 import { useMap } from "react-map-gl";
+import { LAYERS } from "../components/layers/layers";
 import { debounce } from "../util/debounce";
 import { FluxProperties } from "./use-flux";
 
@@ -21,9 +22,9 @@ export const useFluxViewportStats = (
   const updateViewportStats = useCallback(() => {
     const currMap = map.current;
     let features: GeoJSON.Feature[] | undefined = flux?.features;
-    if (currMap?.getLayer("flux-point-layer")) {
+    if (currMap?.getLayer(LAYERS.FLUX)) {
       features = currMap?.queryRenderedFeatures({
-        layers: ["flux-point-layer"],
+        layers: [LAYERS.FLUX],
       });
     }
     if (!features || features.length === 0) {

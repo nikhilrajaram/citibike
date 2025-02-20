@@ -26,9 +26,13 @@ body {
 }
 
 .blur-popup .mapboxgl-popup-content {
-  @apply bg-transparent backdrop-filter backdrop-blur-sm blur-border;
+  @apply bg-transparent backdrop-filter backdrop-blur-lg blur-border;
 }
 
 .popup-no-tip .mapboxgl-popup-tip {
   display: none;
+}
+
+.closeable-popup .mapboxgl-popup-content {
+  @apply pr-8;
 }

@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { Layer, Source } from "react-map-gl";
+import { LAYERS } from "./layers";
+
 
 const BIKE_LANES_URL = process.env.NEXT_PUBLIC_BIKE_LANE_GEOJSON_URL;
 
@@ -62,7 +64,7 @@ export const BikeLaneLayer = () => {
   return (
     <Source id="bike-lanes" type="geojson" data={data}>
       <Layer
-        id="bike-lanes-layer"
+        id={LAYERS.BIKE}
         type="line"
         paint={{
           "line-color": [

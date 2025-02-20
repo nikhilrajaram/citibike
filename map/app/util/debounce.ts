@@ -1,5 +1,6 @@
 export const debounce = (
-  f: (...args: unknown[]) => unknown,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  f: (...args: any[]) => any,
   wait: number,
   immediate: boolean = true
 ) => {
