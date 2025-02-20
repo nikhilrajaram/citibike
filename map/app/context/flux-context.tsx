@@ -1,6 +1,6 @@
+import { DAYS_OF_WEEK_LABELS } from "@/app/util/days-of-week";
 import dayjs, { Dayjs } from "dayjs";
 import { createContext, useState } from "react";
-import { DAYS_OF_WEEK_LABELS } from "../util/days-of-week";
 
 type FluxFilter = {
   startDate: Dayjs;

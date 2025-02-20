@@ -1,6 +1,6 @@
+import { getClient } from "@/lib/clickhouse-client";
+import { getStationsById } from "@/lib/stations";
 import dayjs from "dayjs";
-import { getStationsById } from "./stations";
-import { getClient } from "./clickhouse-client";
 
 type FluxQuery = {
   startDate: string;

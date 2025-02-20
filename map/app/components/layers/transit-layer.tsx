@@ -1,9 +1,9 @@
+import { LAYERS } from "@/app/components/layers/layers";
 import { emptyFeatureCollection } from "@/app/util/empty-geojson";
 import { DefaultError, useQuery } from "@tanstack/react-query";
 import { Typography } from "antd";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Layer, MapMouseEvent, Popup, Source, useMap } from "react-map-gl";
-import { LAYERS } from "./layers";
 
 const GTFS_STOPS_GEOJSON = process.env.NEXT_PUBLIC_GTFS_STOPS_GEOJSON_URL;
 
@@ -153,7 +153,7 @@ export const TransitLayer = () => {
       // haven't been able to get the slots working so just defaulting to an empty
       // feature collection to ensure that the layers are added in the order rendered
       // in bike-map.tsx
-      data={(!isPending && data) ? data : emptyFeatureCollection}
+      data={!isPending && data ? data : emptyFeatureCollection}
     >
       <Layer
         id={LAYERS.SUBWAY_STOPS}

@@ -1,4 +1,8 @@
-import { RightOutlined } from "@ant-design/icons";
+import { FluxContext } from "@/app/context/flux-context";
+import { LayerContext } from "@/app/context/layer-context";
+import { useWindowSize } from "@/app/hooks/use-window-size";
+import { DAYS_OF_WEEK_LABELS } from "@/app/util/days-of-week";
+import { RightOutlined, UpOutlined } from "@ant-design/icons";
 import {
   Button,
   Checkbox,
@@ -12,13 +16,16 @@ import { CheckboxChangeEvent } from "antd/es/checkbox";
 import { RangePickerProps } from "antd/es/date-picker";
 import Title from "antd/es/typography/Title";
 import { useContext, useState } from "react";
-import { FluxContext } from "../../context/flux-context";
-import { LayerContext } from "../../context/layer-context";
-import { DAYS_OF_WEEK_LABELS } from "../../util/days-of-week";
 
 export const Sidebar = () => {
-  const { showFlux, showTransit, setShowFlux, showBikeLanes, setShowTransit, setShowBikeLanes } =
-    useContext(LayerContext);
+  const {
+    showFlux,
+    showTransit,
+    setShowFlux,
+    showBikeLanes,
+    setShowTransit,
+    setShowBikeLanes,
+  } = useContext(LayerContext);
 
   const {
     startDate,
@@ -34,6 +41,8 @@ export const Sidebar = () => {
   } = useContext(FluxContext);
 
   const [open, setOpen] = useState(true);
+
+  const { width, height } = useWindowSize();
 
   const [isDayFilterDisabled, setIsDayFilterDisabled] = useState<boolean>(
     endDate.diff(startDate, "day") < 7
@@ -105,14 +114,38 @@ export const Sidebar = () => {
     setShowBikeLanes(e.target.checked);
   };
 
+  const buttonStyle =
+    width > height
+      ? ({
+          height: "60px",
+          width: "30px",
+          position: "fixed",
+          left: 0,
+          top: "calc(25% - 30px)",
+          borderRadius: "0",
+          boxShadow: "2px 0 5px rgba(7, 7, 7, 0.1)",
+        } as const)
+      : ({
+          height: "30px",
+          width: "60px",
+          position: "fixed",
+          bottom: 0,
+          left: "calc(50% - 30px)",
+          borderRadius: "0",
+          boxShadow: "2px 0 5px rgba(13, 7, 7, 0.1)",
+        } as const);
+
+  const drawerStyle = {
+    placement: width > height ? "left" : "bottom",
+    width: width > height ? 290 : undefined,
+    height: width > height ? undefined : 200,
+    mask: false,
+  } as const;
+
+  const icon = width > height ? <RightOutlined /> : <UpOutlined />;
+
   return open ? (
-    <Drawer
-      onClose={hideDrawer}
-      open={open}
-      placement="left"
-      width={280}
-      mask={false}
-    >
+    <Drawer onClose={hideDrawer} open={open} {...drawerStyle}>
       <div className="flex flex-col gap-4">
         <Title level={4}>Layers</Title>
         <div className="flex flex-col">
@@ -175,20 +208,8 @@ export const Sidebar = () => {
       </div>
     </Drawer>
   ) : (
-    <div className="absolute left-0 z-10" onClick={showDrawer}>
-      <Button
-        style={{
-          height: "60px",
-          width: "30px",
-          borderRadius: "0",
-          position: "absolute",
-          left: 0,
-          top: "50%",
-          transform: "translateY(100%)",
-          boxShadow: "2px 0 5px rgba(7, 7, 7, 0.1)",
-        }}
-        icon={<RightOutlined />}
-      ></Button>
+    <div className="relative z-10" onClick={showDrawer}>
+      <Button style={buttonStyle} icon={icon}></Button>
     </div>
   );
 };

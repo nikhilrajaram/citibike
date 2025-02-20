@@ -1,9 +1,9 @@
+import { LAYERS } from "@/app/components/layers/layers";
+import { FluxProperties } from "@/app/hooks/use-flux";
+import { debounce } from "@/app/util/debounce";
 import * as d3 from "d3";
 import { useCallback, useEffect, useState } from "react";
 import { useMap } from "react-map-gl";
-import { LAYERS } from "../components/layers/layers";
-import { debounce } from "../util/debounce";
-import { FluxProperties } from "./use-flux";
 
 /**
  * Gets statistics for flux values in the current viewport

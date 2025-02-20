@@ -1,9 +1,9 @@
+import { useFluxViewportStats } from "@/app/hooks/use-flux-viewport-stats";
+import { DAYS_OF_WEEK_LABELS } from "@/app/util/days-of-week";
+import { daysOfWeekBetween } from "@/app/util/days-of-week-between";
 import { useQuery } from "@tanstack/react-query";
 import { Dayjs } from "dayjs";
 import { useEffect, useRef } from "react";
-import { DAYS_OF_WEEK_LABELS } from "../util/days-of-week";
-import { daysOfWeekBetween } from "../util/days-of-week-between";
-import { useFluxViewportStats } from "./use-flux-viewport-stats";
 
 export type FluxProperties = {
   stationId: string;
@@ -31,18 +31,6 @@ export const useFlux = ({
   daysOfWeek,
 }: FluxFilter) => {
   const abortControllerRef = useRef<AbortController | null>(null);
-
-  const formatParams = () => {
-    return {
-      startDate: startDate.format("YYYYMMDD"),
-      endDate: endDate.format("YYYYMMDD"),
-      startTime: startTime.format("HHmmss"),
-      endTime: endTime.format("HHmmss"),
-      daysOfWeek: daysOfWeek
-        .map((d) => DAYS_OF_WEEK_LABELS.indexOf(d))
-        .join(","),
-    };
-  };
 
   useEffect(() => {
     return () => {
@@ -108,17 +96,24 @@ export const useFlux = ({
 
     return {
       ...data,
-      features: data.features.map((f) => ({
-        ...f,
-        properties: {
-          ...f.properties,
-          // normalize to daily values
-          inbound: Math.round(f.properties.inbound / daysInSelection),
-          outbound: Math.round(f.properties.outbound / daysInSelection),
-          flux: Math.round(f.properties.flux / daysInSelection),
-          rides: Math.round(f.properties.rides / daysInSelection),
-        },
-      })),
+      features: data.features.map((f) => {
+        // normalize to daily values
+        const inbound = Math.round(f.properties.inbound / daysInSelection);
+        const outbound = Math.round(f.properties.outbound / daysInSelection);
+        // rely on normalized values to avoid rounding errors
+        const flux = inbound - outbound;
+        const rides = inbound + outbound;
+        return {
+          ...f,
+          properties: {
+            ...f.properties,
+            inbound,
+            outbound,
+            flux,
+            rides,
+          },
+        };
+      }),
     };
   };
 

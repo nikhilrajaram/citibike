@@ -1,5 +1,5 @@
+import { getClient } from "@/lib/clickhouse-client";
 import { kv } from "@vercel/kv";
-import { getClient } from "./clickhouse-client";
 
 type Station = {
   stationId: string;

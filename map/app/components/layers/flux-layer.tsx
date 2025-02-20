@@ -1,14 +1,14 @@
+import { LAYERS } from "@/app/components/layers/layers";
+import { BikeStationPopupContent } from "@/app/components/popup/bike-station-popup-content";
+import { CloseablePopup } from "@/app/components/popup/closeable-popup";
+import { FluxContext } from "@/app/context/flux-context";
+import { FluxProperties, useFlux } from "@/app/hooks/use-flux";
+import { clamp } from "@/app/util/clamp";
 import { Typography } from "antd";
 import Title from "antd/es/typography/Title";
 import * as d3 from "d3";
 import { useCallback, useContext, useEffect, useState } from "react";
 import { Layer, MapMouseEvent, Source, useMap } from "react-map-gl";
-import { FluxContext } from "../../context/flux-context";
-import { FluxProperties, useFlux } from "../../hooks/use-flux";
-import { clamp } from "../../util/clamp";
-import { BikeStationPopupContent } from "../popup/bike-station-popup-content";
-import { CloseablePopup } from "../popup/closeable-popup";
-import { LAYERS } from "./layers";
 
 export const FluxLayer = () => {
   const { startDate, endDate, startTime, endTime, daysOfWeek } =
@@ -218,7 +218,7 @@ export const FluxLayer = () => {
 
     return (
       <div
-        className="fixed top-4 right-4 p-4 rounded shadow-lg z-1 backdrop-filter backdrop-blur-sm blur-border"
+        className="fixed top-4 right-4 p-4 rounded shadow-lg z-1 backdrop-filter backdrop-blur-lg blur-border"
         style={{ border: "1px solid #515050" }}
       >
         <div className="flex flex-col items-end justify-between transition-all duration-500">

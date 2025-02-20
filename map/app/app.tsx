@@ -1,10 +1,10 @@
 "use client";
+import { BikeMap } from "@/app/components/bike-map";
+import { Sidebar } from "@/app/components/sidebar/sidebar";
+import { FluxProvider } from "@/app/context/flux-context";
+import { LayerProvider } from "@/app/context/layer-context";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ConfigProvider, theme } from "antd";
-import { BikeMap } from "./components/bike-map";
-import { Sidebar } from "./components/sidebar/sidebar";
-import { FluxProvider } from "./context/flux-context";
-import { LayerProvider } from "./context/layer-context";
 
 const queryClient = new QueryClient();
 
