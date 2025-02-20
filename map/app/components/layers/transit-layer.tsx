@@ -81,27 +81,24 @@ export const TransitLayer = () => {
   } | null>(null);
   const [cursor, setCursor] = useState<"default" | "pointer">("default");
 
-  const onMouseEnter = useCallback(
-    (e: MapMouseEvent) => {
-      const shouldShowPopup = (map.current?.getZoom() || -Infinity) >= 12;
-      if (!shouldShowPopup) {
-        return;
-      }
-      const station = e.features?.[0] as GeoJSON.Feature<
-        GeoJSON.Point,
-        GeoJSON.GeoJsonProperties
-      >;
-      setCursor("pointer");
-      if (!hoveredStation && station) {
-        setHoveredStation({
-          stopName: station.properties?.stop_name,
-          longitude: station.geometry.coordinates[0],
-          latitude: station.geometry.coordinates[1],
-        });
-      }
-    },
-    [hoveredStation, map]
-  );
+  const onMouseEnter = useCallback((e: MapMouseEvent) => {
+    const shouldShowPopup = (map.current?.getZoom() || -Infinity) >= 12;
+    if (!shouldShowPopup) {
+      return;
+    }
+    const station = e.features?.[0] as GeoJSON.Feature<
+      GeoJSON.Point,
+      GeoJSON.GeoJsonProperties
+    >;
+    setCursor("pointer");
+    if (!hoveredStation && station) {
+      setHoveredStation({
+        stopName: station.properties?.stop_name,
+        longitude: station.geometry.coordinates[0],
+        latitude: station.geometry.coordinates[1],
+      });
+    }
+  }, []);
 
   const onMouseLeave = useCallback(() => {
     setCursor("default");
@@ -136,7 +133,7 @@ export const TransitLayer = () => {
       currMap.off("mouseleave", LAYERS.SUBWAY_STOPS, onMouseLeave);
       currMap.off("click", LAYERS.SUBWAY_STOPS, onClick);
     };
-  });
+  }, []);
 
   useEffect(() => {
     const canvas = map.current?.getCanvas();

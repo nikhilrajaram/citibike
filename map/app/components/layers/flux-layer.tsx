@@ -70,7 +70,7 @@ export const FluxLayer = () => {
         });
       }
     },
-    [map, pinnedStations, hoveredStation]
+    [pinnedStations]
   );
 
   const onMouseLeave = useCallback(() => {
