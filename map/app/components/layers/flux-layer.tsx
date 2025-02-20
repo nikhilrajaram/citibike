@@ -81,7 +81,6 @@ export const FluxLayer = () => {
   const onClick = useCallback(
     (e: MapMouseEvent) => {
       if (e.features && e.features.length > 0) {
-        // Prevent click from propagating to the map
         e.originalEvent.stopPropagation();
         const station = e.features[0] as GeoJSON.Feature<
           GeoJSON.Point,
@@ -116,7 +115,6 @@ export const FluxLayer = () => {
 
   const removePinnedStation = (index: number) => {
     setPinnedStations((prev) => prev.filter((_, i) => i !== index));
-    return true;
   };
 
   useEffect(() => {

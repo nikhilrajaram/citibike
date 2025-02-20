@@ -113,7 +113,7 @@ export const TransitLayer = () => {
       e.originalEvent.stopPropagation();
 
       setHoveredStation({
-        stopName: e.features?.[0]?.properties?.stop_name,
+        stopName: e.features[0].properties?.stop_name,
         longitude: e.lngLat.lng,
         latitude: e.lngLat.lat,
       });
