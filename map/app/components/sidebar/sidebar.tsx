@@ -141,7 +141,7 @@ export const Sidebar = () => {
         <Title level={4}>Layers</Title>
         <div className="flex flex-col">
           <Checkbox checked={showFlux} onChange={handleShowFluxChange}>
-            Flux
+            Flow
           </Checkbox>
           <Checkbox checked={showTransit} onChange={handleShowTransitChange}>
             Transit
