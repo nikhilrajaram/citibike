@@ -119,6 +119,7 @@ export const Sidebar = () => {
   const buttonStyle = {
     position: "fixed",
     top: isHorizontallyOriented ? "calc(25% - 30px)" : undefined,
+    bottom: isHorizontallyOriented ? undefined : 0,
     left: isHorizontallyOriented ? 0 : "calc(50% - 30px)",
     height: isHorizontallyOriented ? "60px" : "30px",
     width: isHorizontallyOriented ? "30px" : "60px",
@@ -129,7 +130,7 @@ export const Sidebar = () => {
   const drawerStyle = {
     placement: isHorizontallyOriented ? "left" : "bottom",
     width: isHorizontallyOriented ? 290 : undefined,
-    height: isHorizontallyOriented ? undefined : 200,
+    height: isHorizontallyOriented ? undefined : "70%",
     mask: false,
   } as const;
 

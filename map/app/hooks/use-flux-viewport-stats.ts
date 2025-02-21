@@ -1,7 +1,8 @@
 import { LAYERS } from "@/app/components/layers/layers";
 import { FluxProperties } from "@/app/hooks/use-flux";
 import * as d3 from "d3";
-import { useEffect, useState } from "react";
+import { MapSourceDataEvent } from "mapbox-gl";
+import { useCallback, useEffect, useState } from "react";
 import { useMap } from "react-map-gl";
 import { useDebounceCallback } from "usehooks-ts";
 
@@ -14,12 +15,15 @@ export const useFluxViewportStats = (
   const map = useMap();
 
   const [viewportStats, setViewportStats] = useState({
-    maxRides: 0,
-    minFlux: 0,
-    maxFlux: 0,
+    maxRides: -Infinity,
+    minFlux: Infinity,
+    maxFlux: -Infinity,
   });
 
-  const updateViewportStats = useDebounceCallback(() => {
+  /**
+   * Query the map for features in view and return summary stats
+   */
+  const updateViewportStats = useCallback(() => {
     const currMap = map.current;
     let features: GeoJSON.Feature[] | undefined = flux?.features;
     if (currMap?.getLayer(LAYERS.FLUX)) {
@@ -34,34 +38,56 @@ export const useFluxViewportStats = (
     const visibleFluxes = features.map((f) => f.properties?.flux as number);
     const visibleRides = features.map((f) => f.properties?.rides as number);
 
-    setViewportStats({
-      maxRides: d3.max(visibleRides) || 0,
-      minFlux: d3.min(visibleFluxes) || 0,
-      maxFlux: d3.max(visibleFluxes) || 0,
-    });
-  }, 50);
+    setViewportStats((prev) => ({
+      maxRides: d3.max(visibleRides) || prev.maxRides,
+      minFlux: d3.min(visibleFluxes) || prev.minFlux,
+      maxFlux: d3.max(visibleFluxes) || prev.maxFlux,
+    }));
+  }, [flux?.features, map]);
+
+  /**
+   * Data load listener to update when viewport is not global
+   */
+  const handleDataLoad = useCallback(
+    (e: MapSourceDataEvent) => {
+      if (e.isSourceLoaded) {
+        updateViewportStats();
+      }
+    },
+    [updateViewportStats]
+  );
+
+  /**
+   * Debounced listener for other move/zoom events
+   */
+  const debouncedUpdateViewportStats = useDebounceCallback(
+    updateViewportStats,
+    100
+  );
 
   // set initial stats
   useEffect(() => {
     updateViewportStats();
-  }, [flux, map, updateViewportStats]);
+  }, [updateViewportStats]);
 
   // update stats on viewport change
   useEffect(() => {
     const currMap = map.current;
 
-    currMap?.on("move", updateViewportStats);
-    currMap?.on("zoom", updateViewportStats);
-    currMap?.on("moveend", updateViewportStats);
-    currMap?.on("zoomend", updateViewportStats);
+    currMap?.on("sourcedata", handleDataLoad);
+    currMap?.on("move", debouncedUpdateViewportStats);
+    currMap?.on("zoom", debouncedUpdateViewportStats);
+    currMap?.on("moveend", debouncedUpdateViewportStats);
+    currMap?.on("zoomend", debouncedUpdateViewportStats);
 
     return () => {
-      currMap?.off("move", updateViewportStats);
-      currMap?.off("zoom", updateViewportStats);
-      currMap?.off("moveend", updateViewportStats);
-      currMap?.off("zoomend", updateViewportStats);
+      currMap?.off("sourcedata", handleDataLoad);
+      currMap?.off("move", debouncedUpdateViewportStats);
+      currMap?.off("zoom", debouncedUpdateViewportStats);
+      currMap?.off("moveend", debouncedUpdateViewportStats);
+      currMap?.off("zoomend", debouncedUpdateViewportStats);
     };
-  }, [flux?.features, map, updateViewportStats]);
+  }, [flux?.features, map, handleDataLoad, debouncedUpdateViewportStats]);
 
   return viewportStats;
 };

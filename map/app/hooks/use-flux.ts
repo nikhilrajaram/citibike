@@ -1,4 +1,3 @@
-import { useFluxViewportStats } from "@/app/hooks/use-flux-viewport-stats";
 import { DAYS_OF_WEEK_LABELS } from "@/app/util/days-of-week";
 import { daysOfWeekBetween } from "@/app/util/days-of-week-between";
 import { useQuery } from "@tanstack/react-query";
@@ -122,7 +121,5 @@ export const useFlux = ({
     refetch();
   }
 
-  const fluxViewportStats = useFluxViewportStats(fluxCollection);
-
-  return { isPending, fluxCollection, ...fluxViewportStats };
+  return { isPending, fluxCollection };
 };

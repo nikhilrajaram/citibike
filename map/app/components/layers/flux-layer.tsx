@@ -3,7 +3,9 @@ import { BikeStationPopupContent } from "@/app/components/popup/bike-station-pop
 import { CloseablePopup } from "@/app/components/popup/closeable-popup";
 import { FluxContext } from "@/app/context/flux-context";
 import { FluxProperties, useFlux } from "@/app/hooks/use-flux";
+import { useFluxViewportStats } from "@/app/hooks/use-flux-viewport-stats";
 import { clamp } from "@/app/util/clamp";
+import { emptyFeatureCollection } from "@/app/util/empty-geojson";
 import { Typography } from "antd";
 import Title from "antd/es/typography/Title";
 import * as d3 from "d3";
@@ -11,16 +13,14 @@ import { useCallback, useContext, useEffect, useState } from "react";
 import { Layer, MapMouseEvent, Source, useMap } from "react-map-gl";
 
 export const FluxLayer = () => {
+  const map = useMap();
+
+  // get flux filter values
   const { startDate, endDate, startTime, endTime, daysOfWeek } =
     useContext(FluxContext);
 
-  const {
-    isPending,
-    fluxCollection: fluxCollection,
-    minFlux,
-    maxFlux,
-    maxRides,
-  } = useFlux({
+  // get flux
+  const { isPending, fluxCollection: fluxCollection } = useFlux({
     startDate,
     endDate,
     startTime,
@@ -28,7 +28,10 @@ export const FluxLayer = () => {
     daysOfWeek,
   });
 
-  const map = useMap();
+  // get flux stats for the markers in the viewport
+  const { minFlux, maxFlux, maxRides } = useFluxViewportStats(fluxCollection);
+
+  /* ------------------------------- hover / pin states ------------------------------- */
   const [hoveredStation, setHoveredStation] = useState<{
     longitude: number;
     latitude: number;
@@ -62,7 +65,7 @@ export const FluxLayer = () => {
         return;
       }
       setCursor("pointer");
-      if (!hoveredStation && station) {
+      if (station) {
         setHoveredStation({
           longitude: station.geometry.coordinates[0],
           latitude: station.geometry.coordinates[1],
@@ -73,6 +76,7 @@ export const FluxLayer = () => {
     [pinnedStations]
   );
 
+  /* ----------------------------- hover / pin listeners ----------------------------- */
   const onMouseLeave = useCallback(() => {
     setCursor("default");
     setHoveredStation(null);
@@ -117,6 +121,7 @@ export const FluxLayer = () => {
     setPinnedStations((prev) => prev.filter((_, i) => i !== index));
   };
 
+  // add event listeners
   useEffect(() => {
     const currMap = map.current;
     if (!currMap) {
@@ -134,6 +139,7 @@ export const FluxLayer = () => {
     };
   }, [map, onMouseEnter, onMouseLeave, onClick]);
 
+  // set cursor
   useEffect(() => {
     const currMap = map.current;
     if (!currMap) {
@@ -149,11 +155,10 @@ export const FluxLayer = () => {
   const fluxes = fluxCollection.features.map((f) => f.properties.flux);
 
   if (
-    maxRides === undefined ||
-    minFlux === undefined ||
-    maxFlux === undefined ||
-    maxRides === 0 ||
-    (minFlux === 0 && maxFlux === 0)
+    !Number.isFinite(maxRides) ||
+    !Number.isFinite(minFlux) ||
+    !Number.isFinite(maxFlux) ||
+    maxRides === 0
   ) {
     // no information
     // todo: show message
@@ -205,18 +210,11 @@ export const FluxLayer = () => {
     return fluxColorScale(bucketValue);
   };
 
-  const FluxLegend = () => {
-    if (
-      !fluxColorScale ||
-      !bins ||
-      !Number.isFinite(minFlux) ||
-      !Number.isFinite(maxFlux) ||
-      minFlux === maxFlux
-    ) {
-      return null;
-    }
-
-    return (
+  const FluxLegend =
+    !fluxCollection ||
+    !Number.isFinite(minFlux) ||
+    !Number.isFinite(maxFlux) ||
+    !Number.isFinite(maxRides) ? null : (
       <div
         className="fixed top-4 right-4 p-4 rounded shadow-lg z-1 backdrop-filter backdrop-blur-lg blur-border"
         style={{ border: "1px solid #515050" }}
@@ -276,7 +274,6 @@ export const FluxLayer = () => {
         </div>
       </div>
     );
-  };
 
   return (
     <>
@@ -335,7 +332,7 @@ export const FluxLayer = () => {
           </CloseablePopup>
         ))}
       </Source>
-      <FluxLegend />
+      {FluxLegend}
     </>
   );
 };
